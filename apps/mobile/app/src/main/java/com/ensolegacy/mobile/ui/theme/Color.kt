@@ -10,16 +10,20 @@ import androidx.compose.ui.graphics.Color
  * to be properly designed later.
  */
 
-// --- Light theme (primary / approved) ---------------------------------------
-val PaperBackground = Color(0xFFFBF7F1)      // warm cream background
-val PaperSurface = Color(0xFFF5EFE4)         // cards / surface
-val PaperSurfaceVariant = Color(0xFFECE4D6)  // raised / chips
-val PaperOutline = Color(0xFFE2D8C8)         // hairline borders
-val MossPrimary = Color(0xFF5F6A2E)          // olive green (primary, titles)
-val ClaySecondary = Color(0xFF7A6A4F)        // warm brown accent
-val Espresso = Color(0xFF3E3326)             // primary text
-val Taupe = Color(0xFF8B7D67)                // muted / secondary text
-val BrickError = Color(0xFFA8453A)           // error / critical
+// --- Light theme (primary / approved — values per screen-spec §3) -----------
+val PaperBackground = Color(0xFFFFF8F5)            // app background
+val PaperSurface = Color(0xFFFFF8F5)               // flat surfaces (bonsai cards, nav bar)
+val PaperSurfaceContainer = Color(0xFFFCEBE1)      // elevated cards
+val PaperSurfaceContainerHigh = Color(0xFFF6E5DB)  // hero / thumbnail placeholder
+val MossPrimary = Color(0xFF5D5F1B)                // moss green (primary)
+val MossPrimaryContainer = Color(0xFF767831)       // active nav, filled buttons
+val ClaySecondary = Color(0xFF6E5B41)              // warm brown accent / secondary text
+val ClaySecondaryContainer = Color(0xFFF9DFBD)     // chips, photo badges
+val Espresso = Color(0xFF221A14)                   // primary text
+val Taupe = Color(0xFF48473A)                      // secondary text / labels
+val PaperOutline = Color(0xFF797868)               // borders
+val PaperOutlineVariant = Color(0xFFC9C7B5)        // subtle borders, dividers
+val BrickError = Color(0xFFBA1A1A)                 // error / critical
 
 // --- Dark theme (DUMMY placeholder — to be redesigned) ----------------------
 val EnsoNight = Color(0xFF14110D)
@@ -32,6 +36,10 @@ val EnsoCream = Color(0xFFEDE5D6)
 val EnsoSand = Color(0xFFA89C86)
 val EnsoError = Color(0xFFCF6B5C)
 
-// --- Health status (tuned to read on both themes) ---------------------------
-val HealthHealthy = Color(0xFF5E7D3A)
-val HealthNeedsCare = Color(0xFFB5852B)
+// --- Health badge colors (spec §3: light bg + dark text pairs) --------------
+val HealthHealthyBg = Color(0xFFDCFCE7)
+val HealthHealthyText = Color(0xFF166534)
+val HealthNeedsCareBg = Color(0xFFFEF9C3)
+val HealthNeedsCareText = Color(0xFF854D0E)
+val HealthCriticalBg = Color(0xFFFEE2E2)
+val HealthCriticalText = Color(0xFF991B1B)

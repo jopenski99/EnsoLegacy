@@ -6,7 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.ensolegacy.mobile.ui.collection.CollectionScreen
+import com.ensolegacy.mobile.ui.MainScaffold
 import com.ensolegacy.mobile.ui.onboarding.OnboardingScreen
 import com.ensolegacy.mobile.ui.onboarding.OnboardingViewModel
 import com.ensolegacy.mobile.ui.theme.EnsoLegacyTheme
@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
                 val onboardingComplete by onboarding.isComplete.collectAsStateWithLifecycle()
 
                 if (onboardingComplete) {
-                    CollectionScreen()
+                    MainScaffold()
                 } else {
                     OnboardingScreen(onFinish = onboarding::complete)
                 }

@@ -57,6 +57,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
     implementation("androidx.activity:activity-compose:1.9.2")
 
+    // Navigation (bottom-nav shell + per-tab destinations)
+    implementation("androidx.navigation:navigation-compose:2.8.4")
+
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.material3:material3")

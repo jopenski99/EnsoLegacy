@@ -1,6 +1,7 @@
 package com.ensolegacy.mobile.ui.collection
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,7 +21,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -38,13 +40,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,12 +53,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ensolegacy.mobile.data.local.BonsaiEntity
 import com.ensolegacy.mobile.domain.BonsaiStage
 import com.ensolegacy.mobile.domain.HealthStatus
-import com.ensolegacy.mobile.ui.theme.HealthHealthy
-import com.ensolegacy.mobile.ui.theme.HealthNeedsCare
+import com.ensolegacy.mobile.ui.components.HealthPill
+import com.ensolegacy.mobile.ui.components.PulsingDot
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CollectionScreen(
+    onTreeClick: (Long) -> Unit = {},
     viewModel: CollectionViewModel = viewModel(factory = CollectionViewModel.Factory),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -67,10 +69,44 @@ fun CollectionScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Ensō Legacy") },
+                // Brand app bar (spec §1.1): app name + notification bell + avatar.
+                // The bell and avatar are chrome for now — they get wired up when
+                // notifications and the profile screen exist.
+                title = {
+                    Text(
+                        text = "Ensō Legacy",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Medium,
+                    )
+                },
+                actions = {
+                    IconButton(onClick = { /* TODO: notifications screen */ }) {
+                        Icon(
+                            Icons.Default.Notifications,
+                            contentDescription = "Notifications",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 12.dp)
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                            .clickable { /* TODO: profile screen */ },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = "Profile",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
                 ),
             )
         },
@@ -96,11 +132,8 @@ fun CollectionScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                item(key = "dashboard") {
-                    DashboardHeader(stats = uiState.stats)
-                }
                 items(uiState.collection, key = { it.id }) { bonsai ->
-                    BonsaiCard(bonsai = bonsai, onDelete = { viewModel.removeBonsai(bonsai.id) })
+                    BonsaiCard(bonsai = bonsai, onClick = { onTreeClick(bonsai.id) })
                 }
             }
         }
@@ -118,205 +151,76 @@ fun CollectionScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BonsaiCard(bonsai: BonsaiEntity, onDelete: () -> Unit) {
+private fun BonsaiCard(bonsai: BonsaiEntity, onClick: () -> Unit) {
+    // Spec §1.4: flat paper card with a hairline border, 76dp thumbnail, name +
+    // scientific name, then stage and a health badge. Deletion now lives on the
+    // tree's detail view, so there's no per-card delete button.
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // Thumbnail placeholder (initial) until tree photos exist.
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surface),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = bonsai.name.take(1).uppercase(),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-            Spacer(Modifier.width(14.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = bonsai.name, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = bonsai.species,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                val stageLabel = BonsaiStage.fromValue(bonsai.stage).label
-                val subtitle = bonsai.acquiredYear
-                    ?.let { "$stageLabel · since $it" } ?: stageLabel
-                Text(text = subtitle, style = MaterialTheme.typography.labelMedium)
-                HealthPill(health = HealthStatus.fromValue(bonsai.health))
-            }
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Remove ${bonsai.name}",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun DashboardHeader(stats: CollectionStats) {
-    var dimension by rememberSaveable { mutableStateOf(DashboardDimension.HEALTH) }
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = "Your collection",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(
-                        text = "${stats.total}",
-                        style = MaterialTheme.typography.displaySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = if (stats.total == 1) "tree" else "trees",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 8.dp),
-                    )
-                }
-            }
-
-            DimensionTabs(selected = dimension, onSelect = { dimension = it })
-
-            // Breakdown rows for the selected dimension: (label, count, bar color).
-            val rows: List<Triple<String, Int, Color>> = when (dimension) {
-                DashboardDimension.AGE ->
-                    AgeBucket.entries.mapNotNull { bucket ->
-                        stats.byAge[bucket]?.let { Triple(bucket.label, it, MaterialTheme.colorScheme.primary) }
-                    }
-                DashboardDimension.STAGE ->
-                    BonsaiStage.entries.mapNotNull { stage ->
-                        stats.byStage[stage]?.let { Triple(stage.label, it, MaterialTheme.colorScheme.primary) }
-                    }
-                DashboardDimension.HEALTH ->
-                    HealthStatus.entries.mapNotNull { status ->
-                        stats.byHealth[status]?.let { Triple(status.label, it, healthColor(status)) }
-                    }
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                rows.forEach { (label, count, color) ->
-                    StatBar(label = label, count = count, total = stats.total, color = color)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DimensionTabs(selected: DashboardDimension, onSelect: (DashboardDimension) -> Unit) {
-    Row(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(50))
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+                shape = RoundedCornerShape(12.dp),
+            ),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
-        DashboardDimension.entries.forEach { dim ->
-            val isSelected = dim == selected
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(50))
-                    .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
-                    .clickable { onSelect(dim) }
-                    .padding(vertical = 8.dp),
-                contentAlignment = Alignment.Center,
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = dim.label,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatBar(label: String, count: Int, total: Int, color: Color) {
-    val fraction = if (total > 0) count.toFloat() / total else 0f
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(text = label, style = MaterialTheme.typography.bodyMedium)
-            Text(
-                text = "$count",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .clip(RoundedCornerShape(50))
-                .background(MaterialTheme.colorScheme.surface),
-        ) {
-            if (fraction > 0f) {
+                // Thumbnail placeholder (initial) until tree photos exist.
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(fraction)
-                        .height(6.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(color),
+                        .size(76.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = bonsai.name.take(1).uppercase(),
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                Spacer(Modifier.width(14.dp))
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = bonsai.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = bonsai.species,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontStyle = FontStyle.Italic,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = BonsaiStage.fromValue(bonsai.stage).label,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        HealthPill(health = HealthStatus.fromValue(bonsai.health))
+                    }
+                }
+            }
+            // Subtle nudge (spec §1.4): pulses until the owner sets up a care schedule.
+            if (!bonsai.careScheduleSet) {
+                PulsingDot(
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
                 )
             }
         }
-    }
-}
-
-private enum class DashboardDimension(val label: String) {
-    AGE("Age"),
-    STAGE("Stage"),
-    HEALTH("Health"),
-}
-
-@Composable
-private fun healthColor(status: HealthStatus): Color = when (status) {
-    HealthStatus.HEALTHY -> HealthHealthy
-    HealthStatus.NEEDS_CARE -> HealthNeedsCare
-    HealthStatus.CRITICAL -> MaterialTheme.colorScheme.error
-}
-
-@Composable
-private fun HealthPill(health: HealthStatus) {
-    val color = healthColor(health)
-    Box(
-        modifier = Modifier
-            .padding(top = 6.dp)
-            .clip(RoundedCornerShape(50))
-            .background(color.copy(alpha = 0.16f))
-            .padding(horizontal = 10.dp, vertical = 3.dp),
-    ) {
-        Text(text = health.label, style = MaterialTheme.typography.labelSmall, color = color)
     }
 }
 

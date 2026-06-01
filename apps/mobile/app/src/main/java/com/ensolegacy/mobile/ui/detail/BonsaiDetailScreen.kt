@@ -1,0 +1,642 @@
+package com.ensolegacy.mobile.ui.detail
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ensolegacy.mobile.data.local.BonsaiEntity
+import com.ensolegacy.mobile.data.local.CareReminderEntity
+import com.ensolegacy.mobile.domain.BonsaiStage
+import com.ensolegacy.mobile.domain.CareDefault
+import com.ensolegacy.mobile.domain.CareType
+import com.ensolegacy.mobile.domain.HealthStatus
+import com.ensolegacy.mobile.ui.components.HealthPill
+import com.ensolegacy.mobile.ui.theme.HealthCriticalBg
+import com.ensolegacy.mobile.ui.theme.HealthCriticalText
+import com.ensolegacy.mobile.ui.theme.HealthHealthyBg
+import com.ensolegacy.mobile.ui.theme.HealthHealthyText
+import com.ensolegacy.mobile.ui.theme.HealthNeedsCareBg
+import com.ensolegacy.mobile.ui.theme.HealthNeedsCareText
+import java.time.Instant
+import java.time.Year
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
+/**
+ * The living record of a single tree. This is the "shell" build: the sections
+ * backed by data that exists today (hero placeholder, identity, status, quick
+ * stats) are real; the sections that depend on features not yet built
+ * (milestones, photo vault, care reminders, stage history, provenance) are
+ * shown as calm "coming soon" cards so the full structure from the spec is
+ * visible and ready to fill in.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BonsaiDetailScreen(
+    bonsaiId: Long,
+    onBack: () -> Unit,
+    viewModel: DetailViewModel = viewModel(factory = DetailViewModel.provideFactory(bonsaiId)),
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var menuOpen by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    var showSetup by remember { mutableStateOf(false) }
+    val bonsai = uiState.bonsai
+
+    Scaffold(
+        floatingActionButton = {
+            if (bonsai != null) {
+                FloatingActionButton(
+                    onClick = { showSetup = true },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                ) {
+                    Icon(Icons.Default.DateRange, contentDescription = "Set up care reminders")
+                }
+            }
+        },
+        topBar = {
+            TopAppBar(
+                title = { Text(bonsai?.name ?: "") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    if (bonsai != null) {
+                        IconButton(onClick = { menuOpen = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More")
+                        }
+                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            // Edit arrives with the edit flow (reuses the add-tree form).
+                            DropdownMenuItem(
+                                text = { Text("Delete") },
+                                onClick = {
+                                    menuOpen = false
+                                    confirmDelete = true
+                                },
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                ),
+            )
+        },
+    ) { innerPadding ->
+        when {
+            uiState.isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(innerPadding),
+                    contentAlignment = Alignment.Center,
+                ) { CircularProgressIndicator() }
+            }
+
+            bonsai == null -> {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(innerPadding).padding(32.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "This tree is no longer in your collection.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+
+            else -> DetailContent(
+                bonsai = bonsai,
+                speciesKnown = uiState.speciesKnown,
+                reminders = uiState.reminders,
+                onUseDefault = viewModel::useDefaultSchedule,
+                onSetMyOwn = { showSetup = true },
+                modifier = Modifier.padding(innerPadding),
+            )
+        }
+    }
+
+    if (showSetup && bonsai != null) {
+        CareSetupSheet(
+            speciesName = bonsai.species,
+            speciesKnown = uiState.speciesKnown,
+            defaults = uiState.careDefaults,
+            onDismiss = { showSetup = false },
+            onSave = { chosen ->
+                viewModel.saveReminders(chosen)
+                showSetup = false
+            },
+        )
+    }
+
+    if (confirmDelete && bonsai != null) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Remove ${bonsai.name}?") },
+            text = { Text("This permanently deletes the tree and its record from your collection.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmDelete = false
+                    viewModel.delete()
+                    onBack()
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = false }) { Text("Cancel") }
+            },
+        )
+    }
+}
+
+@Composable
+private fun DetailContent(
+    bonsai: BonsaiEntity,
+    speciesKnown: Boolean,
+    reminders: List<CareReminderEntity>,
+    onUseDefault: () -> Unit,
+    onSetMyOwn: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+    ) {
+        Hero(bonsai = bonsai)
+        Identity(bonsai = bonsai)
+        StatusRow(bonsai = bonsai)
+        QuickStats(bonsai = bonsai)
+
+        CareRemindersSection(
+            reminders = reminders,
+            speciesKnown = speciesKnown,
+            speciesName = bonsai.species,
+            onUseDefault = onUseDefault,
+            onSetMyOwn = onSetMyOwn,
+        )
+
+        // Sections from the spec awaiting their backing features. Each lands as
+        // its own slice (see the screen-spec md): Milestones, Photo Vault,
+        // stage-transition history, and provenance.
+        ComingSoonSection(
+            title = "Timeline",
+            note = "Milestones — the heart of the Tree Passport — will be documented here.",
+        )
+        ComingSoonSection(
+            title = "Photo vault",
+            note = "A visual diary of this tree, beyond care moments.",
+        )
+        ComingSoonSection(
+            title = "Stage history",
+            note = "Each move between life stages will be recorded here.",
+        )
+        ComingSoonSection(
+            title = "Provenance",
+            note = "Where this tree came from and its origin story.",
+        )
+        Spacer(Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun Hero(bonsai: BonsaiEntity) {
+    // No-photo placeholder variant. The cover-photo picker arrives with the
+    // photo vault slice; for now we show a calm monogram on the warm surface.
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(220.dp)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = bonsai.name.take(1).uppercase(),
+            style = MaterialTheme.typography.displayLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
+@Composable
+private fun Identity(bonsai: BonsaiEntity) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(text = bonsai.name, style = MaterialTheme.typography.headlineMedium)
+        Text(
+            text = bonsai.species,
+            style = MaterialTheme.typography.bodyLarge,
+            fontStyle = FontStyle.Italic,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun StatusRow(bonsai: BonsaiEntity) {
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        StatusColumn(label = "Age") {
+            Text(text = ageText(bonsai.acquiredYear), style = MaterialTheme.typography.titleMedium)
+        }
+        StatusColumn(label = "Stage") {
+            Text(
+                text = BonsaiStage.fromValue(bonsai.stage).label,
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
+        StatusColumn(label = "Health") {
+            HealthPill(health = HealthStatus.fromValue(bonsai.health))
+        }
+    }
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+}
+
+@Composable
+private fun StatusColumn(label: String, value: @Composable () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        value()
+        Text(
+            text = label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun QuickStats(bonsai: BonsaiEntity) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            StatLine(
+                label = "Date established",
+                value = bonsai.acquiredYear?.toString() ?: "Not recorded",
+            )
+            StatDivider()
+            StatLine(label = "Species", value = bonsai.species)
+            StatDivider()
+            StatLine(label = "Stage", value = BonsaiStage.fromValue(bonsai.stage).label)
+            StatDivider()
+            StatLine(label = "Added", value = formatDate(bonsai.createdAt))
+        }
+    }
+}
+
+@Composable
+private fun StatLine(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(text = value, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+private fun StatDivider() {
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+}
+
+/**
+ * Care Reminders section (spec §2.5/§2.6). Once reminders exist they show as
+ * cards with their next-due status. Otherwise it's a *non-forced* inline prompt
+ * — not a blocking modal — offering to set them up: "We know this species" copy
+ * appears when the tree's species is in our catalog. "Use Default Schedule"
+ * persists the species defaults; "Set My Own" opens the setup sheet (the FAB
+ * does too); "Later" dismisses without setting anything.
+ */
+@Composable
+private fun CareRemindersSection(
+    reminders: List<CareReminderEntity>,
+    speciesKnown: Boolean,
+    speciesName: String,
+    onUseDefault: () -> Unit,
+    onSetMyOwn: () -> Unit,
+) {
+    var dismissed by rememberSaveable { mutableStateOf(false) }
+    SectionScaffold(title = "Care reminders") {
+        when {
+            reminders.isNotEmpty() -> ReminderCards(reminders = reminders)
+
+            dismissed -> SectionNote(
+                "No care reminders set. Tap the schedule button to set them up.",
+            )
+
+            else -> Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = if (speciesKnown) "We know this species." else "Set up care reminders",
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    text = if (speciesKnown) {
+                        "Want to set up care reminders for your $speciesName?"
+                    } else {
+                        "Let's set up your reminders for this bonsai."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(onClick = onUseDefault, modifier = Modifier.fillMaxWidth()) {
+                    Text("Use Default Schedule")
+                }
+                OutlinedButton(onClick = onSetMyOwn, modifier = Modifier.fillMaxWidth()) {
+                    Text("Set My Own")
+                }
+                TextButton(onClick = { dismissed = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Later")
+                }
+            }
+        }
+    }
+}
+
+/** Horizontally scrolling reminder cards (spec §2.5): type, next due, status. */
+@Composable
+private fun ReminderCards(reminders: List<CareReminderEntity>) {
+    val now = System.currentTimeMillis()
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 0.dp),
+    ) {
+        items(reminders, key = { it.id }) { reminder ->
+            val type = CareType.fromValue(reminder.type)
+            val status = careStatusOf(reminder.nextDueAt, now)
+            Card(
+                modifier = Modifier.width(150.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        text = "${type.emoji} ${type.label}",
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    Text(
+                        text = "Next: ${formatDate(reminder.nextDueAt)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    CareStatusPill(status = status)
+                }
+            }
+        }
+    }
+}
+
+private enum class CareStatus(val label: String) {
+    ON_SCHEDULE("On schedule"),
+    DUE_SOON("Due soon"),
+    OVERDUE("Overdue"),
+}
+
+/** Due in the past = overdue; within ~2 weeks = due soon; otherwise on schedule. */
+private fun careStatusOf(nextDueAt: Long, now: Long): CareStatus {
+    val daysUntil = (nextDueAt - now) / (24L * 60 * 60 * 1000)
+    return when {
+        daysUntil < 0 -> CareStatus.OVERDUE
+        daysUntil <= 14 -> CareStatus.DUE_SOON
+        else -> CareStatus.ON_SCHEDULE
+    }
+}
+
+@Composable
+private fun CareStatusPill(status: CareStatus) {
+    val (background, text) = when (status) {
+        CareStatus.ON_SCHEDULE -> HealthHealthyBg to HealthHealthyText
+        CareStatus.DUE_SOON -> HealthNeedsCareBg to HealthNeedsCareText
+        CareStatus.OVERDUE -> HealthCriticalBg to HealthCriticalText
+    }
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(background)
+            .padding(horizontal = 10.dp, vertical = 3.dp),
+    ) {
+        Text(text = status.label, style = MaterialTheme.typography.labelSmall, color = text)
+    }
+}
+
+/**
+ * Spec §2.6 "Set up care reminders" bottom sheet. Lists the species' default
+ * tasks, each toggleable, pre-filled with its cadence and a computed first-due
+ * date. Per-task date editing ("Change date") and notifications are later slices.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CareSetupSheet(
+    speciesName: String,
+    speciesKnown: Boolean,
+    defaults: List<CareDefault>,
+    onDismiss: () -> Unit,
+    onSave: (List<CareDefault>) -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    // Every default starts enabled; the owner can switch any off before saving.
+    val enabled = remember(defaults) {
+        mutableStateOf(defaults.map { it.type }.toSet())
+    }
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(text = "Set up care reminders", style = MaterialTheme.typography.titleLarge)
+            Text(
+                text = if (speciesKnown) "Defaults for your $speciesName." else "Choose reminders for this bonsai.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            defaults.forEach { default ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "${default.type.emoji} ${default.type.label}",
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        Text(
+                            text = default.cadenceLabel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = default.type in enabled.value,
+                        onCheckedChange = { on ->
+                            enabled.value = if (on) {
+                                enabled.value + default.type
+                            } else {
+                                enabled.value - default.type
+                            }
+                        },
+                    )
+                }
+            }
+
+            Button(
+                onClick = { onSave(defaults.filter { it.type in enabled.value }) },
+                enabled = enabled.value.isNotEmpty(),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Save reminders")
+            }
+            TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                Text("Later")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ComingSoonSection(title: String, note: String) {
+    SectionScaffold(title = title) { SectionNote(note) }
+}
+
+/** Section header + content slot, shared by the detail sections. */
+@Composable
+private fun SectionScaffold(title: String, content: @Composable () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        content()
+    }
+}
+
+/** Muted, italic note inside a soft surface box — the "coming soon" filler. */
+@Composable
+private fun SectionNote(note: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(16.dp),
+    ) {
+        Text(
+            text = note,
+            style = MaterialTheme.typography.bodyMedium,
+            fontStyle = FontStyle.Italic,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** "~N yrs" from the acquired year, or an em dash when unknown. */
+private fun ageText(acquiredYear: Int?): String {
+    if (acquiredYear == null) return "—"
+    val years = Year.now().value - acquiredYear
+    return if (years <= 0) "<1 yr" else "~$years yr${if (years == 1) "" else "s"}"
+}
+
+private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
+
+private fun formatDate(epochMillis: Long): String =
+    Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalDate().format(dateFormatter)

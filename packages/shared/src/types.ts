@@ -24,6 +24,8 @@ export interface Bonsai {
   species: string;
   stage: BonsaiStage;
   health: HealthStatus;
+  /** Whether the owner has set up care reminders for this tree yet. */
+  careScheduleSet: boolean;
   /** Year the tree entered the collection or training began. */
   acquiredYear?: number;
   /** Public slug used by the QR tree-history page, if shared. */

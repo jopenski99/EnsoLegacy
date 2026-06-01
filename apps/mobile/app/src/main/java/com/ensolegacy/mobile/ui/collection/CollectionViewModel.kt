@@ -38,6 +38,8 @@ class CollectionViewModel(
                 CollectionUiState(
                     collection = collection,
                     stats = CollectionStats.from(collection),
+                    needsCare = collection.filter { it.needsCare() }.sortedBy { it.careSeverity() },
+                    needsSetup = collection.filter { !it.careScheduleSet },
                     isLoading = false,
                 )
             }
@@ -89,9 +91,30 @@ class CollectionViewModel(
 data class CollectionUiState(
     val collection: List<BonsaiEntity> = emptyList(),
     val stats: CollectionStats = CollectionStats(),
+    /**
+     * Trees the dashboard surfaces as needing care, worst first. Today this is
+     * driven purely by health (Critical, then Needs Care). As the Schedule and
+     * Milestone features land, overdue reminders, an unset care schedule, and
+     * undocumented trees fold into this same list — see [BonsaiEntity.needsCare].
+     */
+    val needsCare: List<BonsaiEntity> = emptyList(),
+    /** Trees with no care schedule set up yet — surfaced as a gentle nudge. */
+    val needsSetup: List<BonsaiEntity> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
 )
+
+/** Whether a tree should appear in the dashboard's "Needs care" list. */
+private fun BonsaiEntity.needsCare(): Boolean =
+    HealthStatus.fromValue(health) != HealthStatus.HEALTHY
+
+/** Sort key for the "Needs care" list: Critical (0) before Needs Care (1). */
+private fun BonsaiEntity.careSeverity(): Int =
+    when (HealthStatus.fromValue(health)) {
+        HealthStatus.CRITICAL -> 0
+        HealthStatus.NEEDS_CARE -> 1
+        HealthStatus.HEALTHY -> 2
+    }
 
 /**
  * Aggregate counts for the collection dashboard. Derived from the collection

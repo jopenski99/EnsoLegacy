@@ -14,6 +14,8 @@ data class BonsaiEntity(
     val species: String,
     val stage: String,
     val health: String = "healthy",
+    /** Whether the owner has set up care reminders for this tree yet. */
+    val careScheduleSet: Boolean = false,
     val acquiredYear: Int? = null,
     val createdAt: Long,
     val updatedAt: Long,

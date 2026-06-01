@@ -9,21 +9,28 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-/** Primary, approved design: warm paper + olive/clay. */
+/** Primary, approved design: warm paper + moss/clay (screen-spec §3 tokens). */
 private val LightColors = lightColorScheme(
     primary = MossPrimary,
     onPrimary = PaperBackground,
+    primaryContainer = MossPrimaryContainer,
+    onPrimaryContainer = PaperBackground,
     secondary = ClaySecondary,
     onSecondary = PaperBackground,
+    secondaryContainer = ClaySecondaryContainer,
+    onSecondaryContainer = ClaySecondary,
     tertiary = ClaySecondary,
     onTertiary = PaperBackground,
     background = PaperBackground,
     onBackground = Espresso,
     surface = PaperSurface,
     onSurface = Espresso,
-    surfaceVariant = PaperSurfaceVariant,
+    surfaceVariant = PaperSurfaceContainer,
     onSurfaceVariant = Taupe,
+    surfaceContainer = PaperSurfaceContainer,
+    surfaceContainerHigh = PaperSurfaceContainerHigh,
     outline = PaperOutline,
+    outlineVariant = PaperOutlineVariant,
     error = BrickError,
     onError = PaperBackground,
 )

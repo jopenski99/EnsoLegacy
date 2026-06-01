@@ -12,6 +12,8 @@ class BonsaiRepository(private val dao: BonsaiDao) {
 
     fun observeCollection(): Flow<List<BonsaiEntity>> = dao.observeAll()
 
+    fun observe(id: Long): Flow<BonsaiEntity?> = dao.observeById(id)
+
     suspend fun save(bonsai: BonsaiEntity): Long = dao.upsert(bonsai)
 
     suspend fun remove(id: Long) = dao.delete(id)

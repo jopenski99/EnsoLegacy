@@ -6,6 +6,7 @@ import com.ensolegacy.mobile.data.AppPreferences
 import com.ensolegacy.mobile.data.SpeciesCatalog
 import com.ensolegacy.mobile.data.local.EnsoDatabase
 import com.ensolegacy.mobile.data.repository.BonsaiRepository
+import com.ensolegacy.mobile.data.repository.CareReminderRepository
 
 /**
  * Application entry point and manual service locator.
@@ -19,12 +20,20 @@ class EnsoApp : Application() {
 
     val database: EnsoDatabase by lazy {
         Room.databaseBuilder(this, EnsoDatabase::class.java, "enso.db")
-            .addMigrations(EnsoDatabase.MIGRATION_1_2)
+            .addMigrations(
+                EnsoDatabase.MIGRATION_1_2,
+                EnsoDatabase.MIGRATION_2_3,
+                EnsoDatabase.MIGRATION_3_4,
+            )
             .build()
     }
 
     val bonsaiRepository: BonsaiRepository by lazy {
         BonsaiRepository(database.bonsaiDao())
+    }
+
+    val careReminderRepository: CareReminderRepository by lazy {
+        CareReminderRepository(database.careReminderDao())
     }
 
     val speciesCatalog: SpeciesCatalog by lazy {
