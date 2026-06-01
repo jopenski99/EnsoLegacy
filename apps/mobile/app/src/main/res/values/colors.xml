@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Launch window / system bars. Mirrors PaperBackground (light, primary).
+         Overridden in values-night for dark mode. -->
+    <color name="enso_window">#FFFBF7F1</color>
+</resources>

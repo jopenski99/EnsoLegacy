@@ -1,0 +1,18 @@
+import { createClient } from "@supabase/supabase-js";
+
+/**
+ * Browser/anon Supabase client for the public web app (landing page +
+ * public QR tree-history pages). Uses only the anon key — never the service
+ * role key, which must stay server-side.
+ */
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. " +
+      "Copy apps/web/.env.example to .env.local and fill it in.",
+  );
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);

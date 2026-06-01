@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+.turbo/
+
+# Environment
+.env
+.env*.local
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Android / Gradle (apps/mobile)
+apps/mobile/.gradle/
+apps/mobile/build/
+apps/mobile/app/build/
+apps/mobile/local.properties
+apps/mobile/.cxx/
+*.apk
+*.aab
+*.keystore
+!debug.keystore
+
+# Supabase
+supabase/.branches/
+supabase/.temp/

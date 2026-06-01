@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark-mode launch window / system bars (mirrors the dummy dark EnsoNight). -->
+    <color name="enso_window">#FF14110D</color>
+</resources>
