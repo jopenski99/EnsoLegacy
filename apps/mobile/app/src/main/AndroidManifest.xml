@@ -2,10 +2,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Required on Android 13+ (API 33) to post care-reminder notifications. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- A camera is preferred for capturing photos but not required to install
+         (gallery import still works on camera-less devices). -->
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
 
     <application
         android:name=".EnsoApp"
         android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.EnsoLegacy">

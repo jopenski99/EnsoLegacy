@@ -44,12 +44,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.ensolegacy.mobile.EnsoApp
 import com.ensolegacy.mobile.data.local.BonsaiEntity
 import com.ensolegacy.mobile.domain.BonsaiStage
 import com.ensolegacy.mobile.domain.HealthStatus
@@ -143,8 +147,8 @@ fun CollectionScreen(
         AddTreeSheet(
             species = viewModel.species,
             onDismiss = { showAddSheet = false },
-            onSave = { name, species, stage, health, acquiredYear ->
-                viewModel.addBonsai(name, species, stage, health, acquiredYear)
+            onSave = { data ->
+                viewModel.addBonsai(data)
                 showAddSheet = false
             },
         )
@@ -174,7 +178,9 @@ private fun BonsaiCard(bonsai: BonsaiEntity, onClick: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Thumbnail placeholder (initial) until tree photos exist.
+                // Cover photo if set, else a monogram placeholder.
+                val context = LocalContext.current
+                val imageStore = remember { (context.applicationContext as EnsoApp).imageStore }
                 Box(
                     modifier = Modifier
                         .size(76.dp)
@@ -182,11 +188,21 @@ private fun BonsaiCard(bonsai: BonsaiEntity, onClick: () -> Unit) {
                         .background(MaterialTheme.colorScheme.surfaceContainerHigh),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        text = bonsai.name.take(1).uppercase(),
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
+                    val coverPath = bonsai.coverPhotoPath
+                    if (coverPath != null) {
+                        AsyncImage(
+                            model = imageStore.resolve(coverPath),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        Text(
+                            text = bonsai.name.take(1).uppercase(),
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
                 Spacer(Modifier.width(14.dp))
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {

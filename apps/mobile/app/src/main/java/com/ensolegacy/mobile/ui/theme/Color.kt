@@ -2,13 +2,6 @@ package com.ensolegacy.mobile.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-/**
- * Ensō Legacy palette.
- *
- * LIGHT is the primary, approved design: warm paper background, olive-green
- * primary, clay-brown accents, espresso text. DARK is a placeholder ("dummy")
- * to be properly designed later.
- */
 
 // --- Light theme (primary / approved — values per screen-spec §3) -----------
 val PaperBackground = Color(0xFFFFF8F5)            // app background
@@ -25,18 +18,42 @@ val PaperOutline = Color(0xFF797868)               // borders
 val PaperOutlineVariant = Color(0xFFC9C7B5)        // subtle borders, dividers
 val BrickError = Color(0xFFBA1A1A)                 // error / critical
 
-// --- Dark theme (DUMMY placeholder — to be redesigned) ----------------------
-val EnsoNight = Color(0xFF14110D)
-val EnsoBark = Color(0xFF211D17)
-val EnsoBarkRaised = Color(0xFF2C261E)
-val EnsoOutline = Color(0xFF463E32)
-val EnsoOlive = Color(0xFF8C8A46)
-val EnsoGold = Color(0xFFC9A24B)
-val EnsoCream = Color(0xFFEDE5D6)
-val EnsoSand = Color(0xFFA89C86)
-val EnsoError = Color(0xFFCF6B5C)
+// --- Dark theme palette ------------------------------------------------------
+// Backgrounds
+val NightBackground = Color(0xFF111714)
+val NightSurface = Color(0xFF1A1F1C)
+val NightSurfaceHigh = Color(0xFF222922)
 
-// --- Health badge colors (spec §3: light bg + dark text pairs) --------------
+// Primary
+val MossLight = Color(0xFFA8C572)
+val MossDim = Color(0xFF7A9A4A)
+val OnMoss = Color(0xFF0D1A0D)
+
+// Text
+val CoolWhite = Color(0xFFE2E8E0)
+val MutedGreenGrey = Color(0xFF9AA89C)
+
+// Borders
+val NightOutline = Color(0xFF3D4A3F)
+val NightOutlineVar = Color(0xFF2A342C)
+
+// Chips
+val NightChipBg = Color(0xFF2A3A2C)
+val NightChipText = Color(0xFFA8C572)
+
+// Health badges (dark)
+val HealthyDarkBg = Color(0xFF1A2E1C)
+val HealthyDarkText = Color(0xFF86C98A)
+val RecoveringDarkBg = Color(0xFF2E2A14)
+val RecoveringDarkText = Color(0xFFC9B86A)
+val CriticalDarkBg = Color(0xFF2E1414)
+val CriticalDarkText = Color(0xFFC96A6A)
+
+// Alert banner (dark)
+val AlertDarkBg = Color(0xFF1A2420)
+val AlertDarkBorder = Color(0xFFA8C572)
+
+// --- Health badge colors (light theme — spec §3: light bg + dark text pairs) -
 val HealthHealthyBg = Color(0xFFDCFCE7)
 val HealthHealthyText = Color(0xFF166534)
 val HealthNeedsCareBg = Color(0xFFFEF9C3)

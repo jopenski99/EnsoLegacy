@@ -14,11 +14,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -27,17 +33,23 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.ensolegacy.mobile.EnsoApp
 import com.ensolegacy.mobile.data.local.BonsaiEntity
 import com.ensolegacy.mobile.domain.BonsaiStage
 import com.ensolegacy.mobile.domain.HealthStatus
@@ -66,10 +78,40 @@ fun DashboardScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dashboard") },
+                title = {
+                    Text(
+                        text = "Ensō Legacy",
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                },
+                actions = {
+                    IconButton(onClick = { /* TODO: notifications screen */ }) {
+                        Icon(
+                            Icons.Default.Notifications,
+                            contentDescription = "Notifications",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 12.dp)
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                            .clickable { /* TODO: profile screen */ },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = "Profile",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
                 ),
             )
         },
@@ -96,6 +138,10 @@ fun DashboardScreen(
 @Composable
 private fun DashboardCard(stats: CollectionStats) {
     var dimension by rememberSaveable { mutableStateOf(DashboardDimension.HEALTH) }
+    // Precomputed here so healthColor (composable) isn't called inside a non-composable lambda below.
+    val healthyBarColor = healthColor(HealthStatus.HEALTHY)
+    val needsCareBarColor = healthColor(HealthStatus.NEEDS_CARE)
+    val criticalBarColor = healthColor(HealthStatus.CRITICAL)
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -140,7 +186,12 @@ private fun DashboardCard(stats: CollectionStats) {
                     }
                 DashboardDimension.HEALTH ->
                     HealthStatus.entries.mapNotNull { status ->
-                        stats.byHealth[status]?.let { Triple(status.label, it, healthColor(status)) }
+                        val barColor = when (status) {
+                            HealthStatus.HEALTHY -> healthyBarColor
+                            HealthStatus.NEEDS_CARE -> needsCareBarColor
+                            HealthStatus.CRITICAL -> criticalBarColor
+                        }
+                        stats.byHealth[status]?.let { Triple(status.label, it, barColor) }
                     }
             }
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -224,19 +275,7 @@ private fun SetUpCareRow(tree: BonsaiEntity, onClick: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = tree.name.take(1).uppercase(),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
+                TreeAvatar(tree = tree, placeholderBg = MaterialTheme.colorScheme.surfaceContainerHigh)
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = tree.name, style = MaterialTheme.typography.titleMedium)
@@ -269,19 +308,7 @@ private fun NeedsCareRow(tree: BonsaiEntity, onClick: () -> Unit) {
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.surface),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = tree.name.take(1).uppercase(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
+            TreeAvatar(tree = tree, placeholderBg = MaterialTheme.colorScheme.surface)
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = tree.name, style = MaterialTheme.typography.titleMedium)
@@ -292,6 +319,36 @@ private fun NeedsCareRow(tree: BonsaiEntity, onClick: () -> Unit) {
                 )
             }
             HealthPill(health = HealthStatus.fromValue(tree.health))
+        }
+    }
+}
+
+/** Small rounded tree thumbnail: the cover photo if set, else a monogram. */
+@Composable
+private fun TreeAvatar(tree: BonsaiEntity, placeholderBg: Color, size: Dp = 44.dp) {
+    val context = LocalContext.current
+    val imageStore = remember { (context.applicationContext as EnsoApp).imageStore }
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(RoundedCornerShape(10.dp))
+            .background(placeholderBg),
+        contentAlignment = Alignment.Center,
+    ) {
+        val coverPath = tree.coverPhotoPath
+        if (coverPath != null) {
+            AsyncImage(
+                model = imageStore.resolve(coverPath),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            Text(
+                text = tree.name.take(1).uppercase(),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
         }
     }
 }

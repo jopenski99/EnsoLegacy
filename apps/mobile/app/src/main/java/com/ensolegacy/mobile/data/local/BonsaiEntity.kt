@@ -14,9 +14,16 @@ data class BonsaiEntity(
     val species: String,
     val stage: String,
     val health: String = "healthy",
-    /** Whether the owner has set up care reminders for this tree yet. */
     val careScheduleSet: Boolean = false,
+    /** Cover photo, as an ImageStore-relative path. Null = monogram placeholder. */
+    val coverPhotoPath: String? = null,
     val acquiredYear: Int? = null,
+    // Acquisition context (item 9) — stable string values mirrored from AcquisitionSource / Placement
+    val acquisitionSource: String? = null,
+    val placement: String? = null,
+    // Provenance (item 8)
+    val origin: String? = null,
+    val acquiredFrom: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
 )

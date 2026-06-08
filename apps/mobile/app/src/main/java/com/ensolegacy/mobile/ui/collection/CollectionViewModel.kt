@@ -13,6 +13,7 @@ import com.ensolegacy.mobile.data.repository.BonsaiRepository
 import com.ensolegacy.mobile.domain.BonsaiStage
 import com.ensolegacy.mobile.domain.HealthStatus
 import com.ensolegacy.mobile.domain.Species
+import com.ensolegacy.mobile.domain.TreeFormData
 import java.time.Year
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -50,22 +51,20 @@ class CollectionViewModel(
             )
 
     /** Add a tree to the collection. */
-    fun addBonsai(
-        name: String,
-        species: String,
-        stage: BonsaiStage,
-        health: HealthStatus,
-        acquiredYear: Int?,
-    ) {
+    fun addBonsai(data: TreeFormData) {
         val now = System.currentTimeMillis()
         viewModelScope.launch {
             repository.save(
                 BonsaiEntity(
-                    name = name.trim(),
-                    species = species.trim(),
-                    stage = stage.value,
-                    health = health.value,
-                    acquiredYear = acquiredYear,
+                    name = data.name.trim(),
+                    species = data.species.trim(),
+                    stage = data.stage.value,
+                    health = data.health.value,
+                    acquiredYear = data.acquiredYear,
+                    acquisitionSource = data.acquisitionSource?.value,
+                    placement = data.placement?.value,
+                    origin = data.origin,
+                    acquiredFrom = data.acquiredFrom,
                     createdAt = now,
                     updatedAt = now,
                 ),

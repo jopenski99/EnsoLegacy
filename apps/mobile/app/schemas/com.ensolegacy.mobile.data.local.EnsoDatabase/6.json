@@ -1,0 +1,146 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 6,
+    "identityHash": "REGENERATE_ON_BUILD",
+    "entities": [
+      {
+        "tableName": "bonsai",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `species` TEXT NOT NULL, `stage` TEXT NOT NULL, `health` TEXT NOT NULL, `careScheduleSet` INTEGER NOT NULL, `coverPhotoPath` TEXT, `acquiredYear` INTEGER, `acquisitionSource` TEXT, `placement` TEXT, `origin` TEXT, `acquiredFrom` TEXT, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL)",
+        "fields": [
+          {"fieldPath": "id", "columnName": "id", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "name", "columnName": "name", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "species", "columnName": "species", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "stage", "columnName": "stage", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "health", "columnName": "health", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "careScheduleSet", "columnName": "careScheduleSet", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "coverPhotoPath", "columnName": "coverPhotoPath", "affinity": "TEXT", "notNull": false},
+          {"fieldPath": "acquiredYear", "columnName": "acquiredYear", "affinity": "INTEGER", "notNull": false},
+          {"fieldPath": "acquisitionSource", "columnName": "acquisitionSource", "affinity": "TEXT", "notNull": false},
+          {"fieldPath": "placement", "columnName": "placement", "affinity": "TEXT", "notNull": false},
+          {"fieldPath": "origin", "columnName": "origin", "affinity": "TEXT", "notNull": false},
+          {"fieldPath": "acquiredFrom", "columnName": "acquiredFrom", "affinity": "TEXT", "notNull": false},
+          {"fieldPath": "createdAt", "columnName": "createdAt", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "updatedAt", "columnName": "updatedAt", "affinity": "INTEGER", "notNull": true}
+        ],
+        "primaryKey": {"autoGenerate": true, "columnNames": ["id"]},
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "care_reminder",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `bonsaiId` INTEGER NOT NULL, `type` TEXT NOT NULL, `intervalDays` INTEGER NOT NULL, `nextDueAt` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, FOREIGN KEY(`bonsaiId`) REFERENCES `bonsai`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {"fieldPath": "id", "columnName": "id", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "bonsaiId", "columnName": "bonsaiId", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "type", "columnName": "type", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "intervalDays", "columnName": "intervalDays", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "nextDueAt", "columnName": "nextDueAt", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "createdAt", "columnName": "createdAt", "affinity": "INTEGER", "notNull": true}
+        ],
+        "primaryKey": {"autoGenerate": true, "columnNames": ["id"]},
+        "indices": [
+          {
+            "name": "index_care_reminder_bonsaiId",
+            "unique": false,
+            "columnNames": ["bonsaiId"],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_care_reminder_bonsaiId` ON `${TABLE_NAME}` (`bonsaiId`)"
+          }
+        ],
+        "foreignKeys": [
+          {"table": "bonsai", "onDelete": "CASCADE", "onUpdate": "NO ACTION", "columns": ["bonsaiId"], "referencedColumns": ["id"]}
+        ]
+      },
+      {
+        "tableName": "milestone",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `bonsaiId` INTEGER NOT NULL, `title` TEXT NOT NULL, `notes` TEXT, `occurredAt` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, FOREIGN KEY(`bonsaiId`) REFERENCES `bonsai`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {"fieldPath": "id", "columnName": "id", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "bonsaiId", "columnName": "bonsaiId", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "title", "columnName": "title", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "notes", "columnName": "notes", "affinity": "TEXT", "notNull": false},
+          {"fieldPath": "occurredAt", "columnName": "occurredAt", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "createdAt", "columnName": "createdAt", "affinity": "INTEGER", "notNull": true}
+        ],
+        "primaryKey": {"autoGenerate": true, "columnNames": ["id"]},
+        "indices": [
+          {
+            "name": "index_milestone_bonsaiId",
+            "unique": false,
+            "columnNames": ["bonsaiId"],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_milestone_bonsaiId` ON `${TABLE_NAME}` (`bonsaiId`)"
+          }
+        ],
+        "foreignKeys": [
+          {"table": "bonsai", "onDelete": "CASCADE", "onUpdate": "NO ACTION", "columns": ["bonsaiId"], "referencedColumns": ["id"]}
+        ]
+      },
+      {
+        "tableName": "photo",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `bonsaiId` INTEGER NOT NULL, `milestoneId` INTEGER, `path` TEXT NOT NULL, `caption` TEXT, `orderIndex` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, FOREIGN KEY(`bonsaiId`) REFERENCES `bonsai`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`milestoneId`) REFERENCES `milestone`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {"fieldPath": "id", "columnName": "id", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "bonsaiId", "columnName": "bonsaiId", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "milestoneId", "columnName": "milestoneId", "affinity": "INTEGER", "notNull": false},
+          {"fieldPath": "path", "columnName": "path", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "caption", "columnName": "caption", "affinity": "TEXT", "notNull": false},
+          {"fieldPath": "orderIndex", "columnName": "orderIndex", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "createdAt", "columnName": "createdAt", "affinity": "INTEGER", "notNull": true}
+        ],
+        "primaryKey": {"autoGenerate": true, "columnNames": ["id"]},
+        "indices": [
+          {
+            "name": "index_photo_bonsaiId",
+            "unique": false,
+            "columnNames": ["bonsaiId"],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_photo_bonsaiId` ON `${TABLE_NAME}` (`bonsaiId`)"
+          },
+          {
+            "name": "index_photo_milestoneId",
+            "unique": false,
+            "columnNames": ["milestoneId"],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_photo_milestoneId` ON `${TABLE_NAME}` (`milestoneId`)"
+          }
+        ],
+        "foreignKeys": [
+          {"table": "bonsai", "onDelete": "CASCADE", "onUpdate": "NO ACTION", "columns": ["bonsaiId"], "referencedColumns": ["id"]},
+          {"table": "milestone", "onDelete": "CASCADE", "onUpdate": "NO ACTION", "columns": ["milestoneId"], "referencedColumns": ["id"]}
+        ]
+      },
+      {
+        "tableName": "stage_transition",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `bonsaiId` INTEGER NOT NULL, `fromStage` TEXT NOT NULL, `toStage` TEXT NOT NULL, `notes` TEXT, `recordedAt` INTEGER NOT NULL, FOREIGN KEY(`bonsaiId`) REFERENCES `bonsai`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {"fieldPath": "id", "columnName": "id", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "bonsaiId", "columnName": "bonsaiId", "affinity": "INTEGER", "notNull": true},
+          {"fieldPath": "fromStage", "columnName": "fromStage", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "toStage", "columnName": "toStage", "affinity": "TEXT", "notNull": true},
+          {"fieldPath": "notes", "columnName": "notes", "affinity": "TEXT", "notNull": false},
+          {"fieldPath": "recordedAt", "columnName": "recordedAt", "affinity": "INTEGER", "notNull": true}
+        ],
+        "primaryKey": {"autoGenerate": true, "columnNames": ["id"]},
+        "indices": [
+          {
+            "name": "index_stage_transition_bonsaiId",
+            "unique": false,
+            "columnNames": ["bonsaiId"],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_stage_transition_bonsaiId` ON `${TABLE_NAME}` (`bonsaiId`)"
+          }
+        ],
+        "foreignKeys": [
+          {"table": "bonsai", "onDelete": "CASCADE", "onUpdate": "NO ACTION", "columns": ["bonsaiId"], "referencedColumns": ["id"]}
+        ]
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'REGENERATE_ON_BUILD')"
+    ]
+  }
+}

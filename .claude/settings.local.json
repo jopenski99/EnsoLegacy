@@ -3,7 +3,14 @@
     "allow": [
       "Bash(npm --version)",
       "Bash(pnpm --version)",
-      "Bash(git --version)"
+      "Bash(git --version)",
+      "PowerShell($adb='Z:\\\\Android\\\\Sdk\\\\platform-tools\\\\adb.exe'; $booted=''; while \\($booted -ne '1'\\) { Start-Sleep -Seconds 3; $booted = \\(& $adb shell getprop sys.boot_completed 2>$null\\).Trim\\(\\) }; Write-Host \"fully booted\")",
+      "PowerShell($adb='Z:\\\\Android\\\\Sdk\\\\platform-tools\\\\adb.exe'; & $adb install -r 'z:\\\\Dev\\\\Personal\\\\Enso Legacy\\\\apps\\\\mobile\\\\app\\\\build\\\\outputs\\\\apk\\\\debug\\\\app-debug.apk')",
+      "PowerShell($adb='Z:\\\\Android\\\\Sdk\\\\platform-tools\\\\adb.exe'; & $adb shell monkey -p com.ensolegacy.mobile -c android.intent.category.LAUNCHER 1)",
+      "PowerShell(Add-Type -AssemblyName System.IO.Compression.FileSystem; $zip = [System.IO.Compression.ZipFile]::OpenRead\\('z:\\\\Dev\\\\Personal\\\\Enso Legacy\\\\apps\\\\mobile\\\\app\\\\src\\\\main\\\\ic_launcher light.zip'\\); $zip.Entries | Select-Object FullName | Sort-Object FullName; $zip.Dispose\\(\\))",
+      "PowerShell(Add-Type -AssemblyName System.IO.Compression.FileSystem; $path = 'z:\\\\Dev\\\\Personal\\\\Enso Legacy\\\\apps\\\\mobile\\\\app\\\\src\\\\main\\\\ic_launcher light.zip'; [System.IO.Compression.ZipFile]::OpenRead\\($path\\).Entries | Select-Object -ExpandProperty FullName | Sort-Object)",
+      "PowerShell(Get-ChildItem -Path 'z:\\\\Dev\\\\Personal\\\\Enso Legacy\\\\apps\\\\mobile\\\\app\\\\src\\\\main\\\\res' -Recurse | Where-Object { !$_.PSIsContainer } | Select-Object FullName)",
+      "PowerShell($env:JAVA_HOME='C:\\\\Program Files\\\\Microsoft\\\\jdk-17.0.19.10-hotspot'; $env:PATH=\"$env:JAVA_HOME\\\\bin;$env:PATH\"; $env:ANDROID_SDK_ROOT='Z:\\\\Android\\\\Sdk'; $env:ANDROID_HOME='Z:\\\\Android\\\\Sdk'; cd 'z:\\\\Dev\\\\Personal\\\\Enso Legacy\\\\apps\\\\mobile'; .\\\\gradlew.bat assembleDebug --console=plain 2>&1)"
     ]
   }
 }

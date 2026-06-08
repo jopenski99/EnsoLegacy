@@ -62,7 +62,10 @@ dependencies {
 
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
+    implementation("androidx.compose.ui:ui-text-google-fonts")
     implementation("androidx.compose.material3:material3")
+    // Extended Material icons (camera / photo-library glyphs for the photo flow)
+    implementation("androidx.compose.material:material-icons-extended")
 
     // Local persistence (Room)
     implementation("androidx.room:room-runtime:2.6.1")
@@ -71,6 +74,15 @@ dependencies {
 
     // Background work
     implementation("androidx.work:work-runtime-ktx:2.9.1")
+
+    // Image loading (cover photos, milestone & vault thumbnails)
+    implementation("io.coil-kt:coil-compose:2.7.0")
+
+    // In-app camera capture (CameraX)
+    implementation("androidx.camera:camera-core:1.4.0")
+    implementation("androidx.camera:camera-camera2:1.4.0")
+    implementation("androidx.camera:camera-lifecycle:1.4.0")
+    implementation("androidx.camera:camera-view:1.4.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

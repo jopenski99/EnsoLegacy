@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell($env:JAVA_HOME='C:\\\\Program Files\\\\Microsoft\\\\jdk-17.0.19.10-hotspot'; $env:PATH=\"$env:JAVA_HOME\\\\bin;$env:PATH\"; $env:ANDROID_SDK_ROOT='Z:\\\\Android\\\\Sdk'; $env:ANDROID_HOME='Z:\\\\Android\\\\Sdk'; & 'z:\\\\Dev\\\\Personal\\\\Enso Legacy\\\\apps\\\\mobile\\\\gradlew.bat' -p 'z:\\\\Dev\\\\Personal\\\\Enso Legacy\\\\apps\\\\mobile' compileDebugKotlin --console=plain)"
+      "PowerShell($env:JAVA_HOME='C:\\\\Program Files\\\\Microsoft\\\\jdk-17.0.19.10-hotspot'; $env:PATH=\"$env:JAVA_HOME\\\\bin;$env:PATH\"; $env:ANDROID_SDK_ROOT='Z:\\\\Android\\\\Sdk'; $env:ANDROID_HOME='Z:\\\\Android\\\\Sdk'; & 'z:\\\\Dev\\\\Personal\\\\Enso Legacy\\\\apps\\\\mobile\\\\gradlew.bat' -p 'z:\\\\Dev\\\\Personal\\\\Enso Legacy\\\\apps\\\\mobile' compileDebugKotlin --console=plain)",
+      "Bash(JAVA_HOME='C:\\\\Program Files\\\\Microsoft\\\\jdk-17.0.19.10-hotspot' ANDROID_SDK_ROOT='Z:\\\\Android\\\\Sdk' ANDROID_HOME='Z:\\\\Android\\\\Sdk' ./gradlew.bat assembleDebug --console=plain)",
+      "PowerShell($env:JAVA_HOME='C:\\\\Program Files\\\\Microsoft\\\\jdk-17.0.19.10-hotspot'; $env:PATH=\"$env:JAVA_HOME\\\\bin;$env:PATH\"; $env:ANDROID_SDK_ROOT='Z:\\\\Android\\\\Sdk'; $env:ANDROID_HOME='Z:\\\\Android\\\\Sdk'; cd 'z:\\\\Dev\\\\Personal\\\\Enso Legacy\\\\apps\\\\mobile'; .\\\\gradlew.bat assembleDebug --console=plain 2>&1)",
+      "PowerShell($emu='Z:\\\\Android\\\\Sdk\\\\emulator\\\\emulator.exe'; Start-Process -FilePath $emu -ArgumentList @\\('-avd', 'enso_api35', '-no-snapshot-save'\\) -WindowStyle Hidden)",
+      "PowerShell($adb='Z:\\\\Android\\\\Sdk\\\\platform-tools\\\\adb.exe'; & $adb wait-for-device; Write-Host \"device online\")"
     ]
   }
 }
