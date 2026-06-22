@@ -91,10 +91,10 @@ class EnsoApp : Application() {
     }
 
     private fun scheduleDailyCareCheck() {
-        val req = PeriodicWorkRequestBuilder<CareReminderCheckWorker>(1, TimeUnit.DAYS).build()
+        val req = PeriodicWorkRequestBuilder<CareReminderCheckWorker>(2, TimeUnit.HOURS).build()
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             CareReminderCheckWorker.WORK_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
+            ExistingPeriodicWorkPolicy.REPLACE,
             req,
         )
     }

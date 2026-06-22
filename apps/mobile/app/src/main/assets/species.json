@@ -1,22 +1,392 @@
 [
-  { "commonName": "Argao Taiwan", "scientificName": "Premna microphylla", "family": "Lamiaceae", "bonsaiType": "Tropical broadleaf evergreen" },
-  { "commonName": "Red Balete", "scientificName": "Ficus elastica", "family": "Moraceae", "bonsaiType": "Tropical ficus" },
-  { "commonName": "Balete", "scientificName": "Ficus indica", "family": "Moraceae", "bonsaiType": "Tropical ficus" },
-  { "commonName": "Chinese Banyan", "scientificName": "Ficus microcarpa", "family": "Moraceae", "bonsaiType": "Tropical ficus" },
-  { "commonName": "Weeping Fig", "scientificName": "Ficus benjamina", "family": "Moraceae", "bonsaiType": "Tropical ficus" },
-  { "commonName": "Ginseng Ficus", "scientificName": "Ficus microcarpa 'Ginseng'", "family": "Moraceae", "bonsaiType": "Tropical ficus cultivar" },
-  { "commonName": "Tiger Bark Ficus", "scientificName": "Ficus microcarpa 'Tiger Bark'", "family": "Moraceae", "bonsaiType": "Tropical ficus cultivar" },
-  { "commonName": "Brush Cherry", "scientificName": "Syzygium paniculatum", "family": "Myrtaceae", "bonsaiType": "Tropical broadleaf evergreen" },
-  { "commonName": "Fukien Tea", "scientificName": "Ehretia microphylla", "family": "Boraginaceae", "bonsaiType": "Tropical broadleaf evergreen" },
-  { "commonName": "Bougainvillea", "scientificName": "Bougainvillea glabra", "family": "Nyctaginaceae", "bonsaiType": "Flowering tropical bonsai" },
-  { "commonName": "Jade Plant", "scientificName": "Crassula ovata", "family": "Crassulaceae", "bonsaiType": "Succulent bonsai" },
-  { "commonName": "Portulacaria Afra", "scientificName": "Portulacaria afra", "family": "Didiereaceae", "bonsaiType": "Succulent bonsai" },
-  { "commonName": "Juniper", "scientificName": "Juniperus chinensis", "family": "Cupressaceae", "bonsaiType": "Conifer bonsai" },
-  { "commonName": "Japanese Black Pine", "scientificName": "Pinus thunbergii", "family": "Pinaceae", "bonsaiType": "Conifer bonsai" },
-  { "commonName": "Japanese Maple", "scientificName": "Acer palmatum", "family": "Sapindaceae", "bonsaiType": "Deciduous bonsai" },
-  { "commonName": "Chinese Elm", "scientificName": "Ulmus parvifolia", "family": "Ulmaceae", "bonsaiType": "Deciduous bonsai" },
-  { "commonName": "Serissa", "scientificName": "Serissa japonica", "family": "Rubiaceae", "bonsaiType": "Flowering bonsai" },
-  { "commonName": "Wrightia", "scientificName": "Wrightia religiosa", "family": "Apocynaceae", "bonsaiType": "Tropical flowering bonsai" },
-  { "commonName": "Tamarind", "scientificName": "Tamarindus indica", "family": "Fabaceae", "bonsaiType": "Tropical broadleaf bonsai" },
-  { "commonName": "Rain Tree", "scientificName": "Samanea saman", "family": "Fabaceae", "bonsaiType": "Tropical broadleaf bonsai" }
+  {
+    "commonName": "Argao Taiwan",
+    "scientificName": "Premna microphylla",
+    "family": "Lamiaceae",
+    "bonsaiType": "Tropical broadleaf evergreen"
+  },
+  {
+    "commonName": "Red Balete",
+    "scientificName": "Ficus elastica",
+    "family": "Moraceae",
+    "bonsaiType": "Tropical ficus"
+  },
+  {
+    "commonName": "Balete",
+    "scientificName": "Ficus indica",
+    "family": "Moraceae",
+    "bonsaiType": "Tropical ficus"
+  },
+  {
+    "commonName": "Chinese Banyan",
+    "scientificName": "Ficus microcarpa",
+    "family": "Moraceae",
+    "bonsaiType": "Tropical ficus"
+  },
+  {
+    "commonName": "Weeping Fig",
+    "scientificName": "Ficus benjamina",
+    "family": "Moraceae",
+    "bonsaiType": "Tropical ficus"
+  },
+  {
+    "commonName": "Ginseng Ficus",
+    "scientificName": "Ficus microcarpa 'Ginseng'",
+    "family": "Moraceae",
+    "bonsaiType": "Tropical ficus cultivar"
+  },
+  {
+    "commonName": "Tiger Bark Ficus",
+    "scientificName": "Ficus microcarpa 'Tiger Bark'",
+    "family": "Moraceae",
+    "bonsaiType": "Tropical ficus cultivar"
+  },
+  {
+    "commonName": "Brush Cherry",
+    "scientificName": "Syzygium paniculatum",
+    "family": "Myrtaceae",
+    "bonsaiType": "Tropical broadleaf evergreen"
+  },
+  {
+    "commonName": "Fukien Tea",
+    "scientificName": "Ehretia microphylla",
+    "family": "Boraginaceae",
+    "bonsaiType": "Tropical broadleaf evergreen"
+  },
+  {
+    "commonName": "Bougainvillea",
+    "scientificName": "Bougainvillea glabra",
+    "family": "Nyctaginaceae",
+    "bonsaiType": "Flowering tropical bonsai"
+  },
+  {
+    "commonName": "Jade Plant",
+    "scientificName": "Crassula ovata",
+    "family": "Crassulaceae",
+    "bonsaiType": "Succulent bonsai"
+  },
+  {
+    "commonName": "Portulacaria Afra",
+    "scientificName": "Portulacaria afra",
+    "family": "Didiereaceae",
+    "bonsaiType": "Succulent bonsai"
+  },
+  {
+    "commonName": "Juniper",
+    "scientificName": "Juniperus chinensis",
+    "family": "Cupressaceae",
+    "bonsaiType": "Conifer bonsai"
+  },
+  {
+    "commonName": "Japanese Black Pine",
+    "scientificName": "Pinus thunbergii",
+    "family": "Pinaceae",
+    "bonsaiType": "Conifer bonsai"
+  },
+  {
+    "commonName": "Japanese Maple",
+    "scientificName": "Acer palmatum",
+    "family": "Sapindaceae",
+    "bonsaiType": "Deciduous bonsai"
+  },
+  {
+    "commonName": "Chinese Elm",
+    "scientificName": "Ulmus parvifolia",
+    "family": "Ulmaceae",
+    "bonsaiType": "Deciduous bonsai"
+  },
+  {
+    "commonName": "Serissa",
+    "scientificName": "Serissa japonica",
+    "family": "Rubiaceae",
+    "bonsaiType": "Flowering bonsai"
+  },
+  {
+    "commonName": "Wrightia",
+    "scientificName": "Wrightia religiosa",
+    "family": "Apocynaceae",
+    "bonsaiType": "Tropical flowering bonsai"
+  },
+  {
+    "commonName": "Tamarind",
+    "scientificName": "Tamarindus indica",
+    "family": "Fabaceae",
+    "bonsaiType": "Tropical broadleaf bonsai"
+  },
+  {
+    "commonName": "Rain Tree",
+    "scientificName": "Samanea saman",
+    "family": "Fabaceae",
+    "bonsaiType": "Tropical broadleaf bonsai"
+  },
+  {
+    "commonName": "Bantigue",
+    "scientificName": "Pemphis acidula",
+    "family": "Lythraceae",
+    "bonsaiType": "Tropical coastal evergreen"
+  },
+  {
+    "commonName": "Tugas (Molave)",
+    "scientificName": "Vitex parviflora",
+    "family": "Lamiaceae",
+    "bonsaiType": "Tropical broadleaf hardwood"
+  },
+  {
+    "commonName": "Kalyos",
+    "scientificName": "Streblus asper",
+    "family": "Moraceae",
+    "bonsaiType": "Tropical broadleaf"
+  },
+  {
+    "commonName": "Agoho (Philippine Pine)",
+    "scientificName": "Casuarina equisetifolia",
+    "family": "Casuarinaceae",
+    "bonsaiType": "Tropical conifer-like deciduous"
+  },
+  {
+    "commonName": "Satsuki Azalea",
+    "scientificName": "Rhododendron indicum",
+    "family": "Ericaceae",
+    "bonsaiType": "Flowering evergreen shrub"
+  },
+  {
+    "commonName": "Kamuning (Orange Jasmine)",
+    "scientificName": "Murraya paniculata",
+    "family": "Rutaceae",
+    "bonsaiType": "Tropical flowering bonsai"
+  },
+  {
+    "commonName": "Desmodium (Green Island)",
+    "scientificName": "Desmodium unifoliatum",
+    "family": "Fabaceae",
+    "bonsaiType": "Tropical broadleaf evergreen"
+  },
+  {
+    "commonName": "Ginkgo",
+    "scientificName": "Ginkgo biloba",
+    "family": "Ginkgoaceae",
+    "bonsaiType": "Deciduous ancient conifer"
+  },
+  {
+    "commonName": "Boxwood",
+    "scientificName": "Buxus microphylla",
+    "family": "Buxaceae",
+    "bonsaiType": "Broadleaf evergreen"
+  },
+  {
+    "commonName": "Water Jasmine",
+    "scientificName": "Wrightia antireligiosa",
+    "family": "Apocynaceae",
+    "bonsaiType": "Tropical flowering bonsai"
+  },
+  {
+    "commonName": "Trident Maple",
+    "scientificName": "Acer buergerianum",
+    "family": "Sapindaceae",
+    "bonsaiType": "Deciduous bonsai"
+  },
+  {
+    "commonName": "Hinoki Cypress",
+    "scientificName": "Chamaecyparis obtusa",
+    "family": "Cupressaceae",
+    "bonsaiType": "Conifer bonsai"
+  },
+  {
+    "commonName": "Bald Cypress",
+    "scientificName": "Taxodium distichum",
+    "family": "Cupressaceae",
+    "bonsaiType": "Deciduous conifer"
+  },
+  {
+    "commonName": "Japanese Cedar",
+    "scientificName": "Cryptomeria japonica",
+    "family": "Cupressaceae",
+    "bonsaiType": "Conifer bonsai"
+  },
+  {
+    "commonName": "Japanese White Pine",
+    "scientificName": "Pinus parviflora",
+    "family": "Pinaceae",
+    "bonsaiType": "Conifer bonsai"
+  },
+  {
+    "commonName": "Scots Pine",
+    "scientificName": "Pinus sylvestris",
+    "family": "Pinaceae",
+    "bonsaiType": "Conifer bonsai"
+  },
+  {
+    "commonName": "Mugo Pine",
+    "scientificName": "Pinus mugo",
+    "family": "Pinaceae",
+    "bonsaiType": "Conifer bonsai"
+  },
+  {
+    "commonName": "Common Yew",
+    "scientificName": "Taxus baccata",
+    "family": "Taxaceae",
+    "bonsaiType": "Conifer bonsai"
+  },
+  {
+    "commonName": "Needle Juniper",
+    "scientificName": "Juniperus rigida",
+    "family": "Cupressaceae",
+    "bonsaiType": "Conifer bonsai"
+  },
+  {
+    "commonName": "Sierra Juniper",
+    "scientificName": "Juniperus occidentalis",
+    "family": "Cupressaceae",
+    "bonsaiType": "Conifer bonsai"
+  },
+  {
+    "commonName": "Ponderosa Pine",
+    "scientificName": "Pinus ponderosa",
+    "family": "Pinaceae",
+    "bonsaiType": "Conifer bonsai"
+  },
+  {
+    "commonName": "Japanese Flowering Cherry",
+    "scientificName": "Prunus serrulata",
+    "family": "Rosaceae",
+    "bonsaiType": "Flowering deciduous"
+  },
+  {
+    "commonName": "Japanese Flowering Quince",
+    "scientificName": "Chaenomeles japonica",
+    "family": "Rosaceae",
+    "bonsaiType": "Flowering deciduous"
+  },
+  {
+    "commonName": "Chinese Quince",
+    "scientificName": "Pseudocydonia sinensis",
+    "family": "Rosaceae",
+    "bonsaiType": "Fruiting deciduous"
+  },
+  {
+    "commonName": "Dwarf Pomegranate",
+    "scientificName": "Punica granatum 'Nano'",
+    "family": "Lythraceae",
+    "bonsaiType": "Fruiting deciduous"
+  },
+  {
+    "commonName": "Japanese Winterberry",
+    "scientificName": "Ilex serrata",
+    "family": "Aquifoliaceae",
+    "bonsaiType": "Fruiting deciduous"
+  },
+  {
+    "commonName": "European Beech",
+    "scientificName": "Fagus sylvatica",
+    "family": "Fagaceae",
+    "bonsaiType": "Deciduous bonsai"
+  },
+  {
+    "commonName": "Japanese Zelkova",
+    "scientificName": "Zelkova serrata",
+    "family": "Ulmaceae",
+    "bonsaiType": "Deciduous bonsai"
+  },
+  {
+    "commonName": "Korean Hornbeam",
+    "scientificName": "Carpinus turczaninowii",
+    "family": "Betulaceae",
+    "bonsaiType": "Deciduous bonsai"
+  },
+  {
+    "commonName": "Chinese Wisteria",
+    "scientificName": "Wisteria sinensis",
+    "family": "Fabaceae",
+    "bonsaiType": "Flowering deciduous vining"
+  },
+  {
+    "commonName": "Star Magnolia",
+    "scientificName": "Magnolia stellata",
+    "family": "Magnoliaceae",
+    "bonsaiType": "Flowering deciduous"
+  },
+  {
+    "commonName": "English Oak",
+    "scientificName": "Quercus robur",
+    "family": "Fagaceae",
+    "bonsaiType": "Deciduous bonsai"
+  },
+  {
+    "commonName": "Common Hawthorn",
+    "scientificName": "Crataegus monogyna",
+    "family": "Rosaceae",
+    "bonsaiType": "Flowering fruiting deciduous"
+  },
+  {
+    "commonName": "Willow Leaf Ficus",
+    "scientificName": "Ficus salicaria",
+    "family": "Moraceae",
+    "bonsaiType": "Tropical ficus"
+  },
+  {
+    "commonName": "Sacred Fig",
+    "scientificName": "Ficus religiosa",
+    "family": "Moraceae",
+    "bonsaiType": "Tropical ficus"
+  },
+  {
+    "commonName": "Jabuticaba",
+    "scientificName": "Plinia cauliflora",
+    "family": "Myrtaceae",
+    "bonsaiType": "Tropical fruiting broadleaf"
+  },
+  {
+    "commonName": "Desert Rose",
+    "scientificName": "Adenium obesum",
+    "family": "Apocynaceae",
+    "bonsaiType": "Succulent flowering bonsai"
+  },
+  {
+    "commonName": "Dwarf Umbrella Tree",
+    "scientificName": "Schefflera arboricola",
+    "family": "Araliaceae",
+    "bonsaiType": "Tropical broadleaf evergreen"
+  },
+  {
+    "commonName": "Natal Plum",
+    "scientificName": "Carissa macrocarpa",
+    "family": "Apocynaceae",
+    "bonsaiType": "Tropical flowering fruiting"
+  },
+  {
+    "commonName": "Brazilian Rain Tree",
+    "scientificName": "Chloroleucon tortum",
+    "family": "Fabaceae",
+    "bonsaiType": "Tropical broadleaf"
+  },
+  {
+    "commonName": "Texas Ebony",
+    "scientificName": "Ebenopsis ebano",
+    "family": "Fabaceae",
+    "bonsaiType": "Subtropical broadleaf evergreen"
+  },
+  {
+    "commonName": "Olive",
+    "scientificName": "Olea europaea",
+    "family": "Oleaceae",
+    "bonsaiType": "Subtropical broadleaf evergreen"
+  },
+  {
+    "commonName": "Sweet Gum",
+    "scientificName": "Liquidambar styraciflua",
+    "family": "Altingiaceae",
+    "bonsaiType": "Deciduous broadleaf"
+  },
+  {
+    "commonName": "Jacaranda",
+    "scientificName": "Jacaranda mimosifolia",
+    "family": "Bignoniaceae",
+    "bonsaiType": "Tropical flowering deciduous"
+  },
+  {
+    "commonName": "Flame Tree",
+    "scientificName": "Delonix regia",
+    "family": "Fabaceae",
+    "bonsaiType": "Tropical flowering deciduous"
+  }
 ]

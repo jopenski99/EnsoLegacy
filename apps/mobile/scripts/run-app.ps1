@@ -87,9 +87,9 @@ if (-not $connected -and -not $NoEmulator) {
 
 # --- Build -------------------------------------------------------------------
 if (-not $SkipBuild) {
-    Write-Step "Building debug APK (gradlew assembleDebug)..."
+    Write-Step "Building debug APK (gradlew clean assembleDebug)..."
     Push-Location $ProjRoot
-    try { & (Join-Path $ProjRoot 'gradlew.bat') assembleDebug --console=plain }
+    try { & (Join-Path $ProjRoot 'gradlew.bat') clean assembleDebug --console=plain }
     finally { Pop-Location }
     if ($LASTEXITCODE -ne 0) { throw "Gradle build failed (exit $LASTEXITCODE)." }
 }

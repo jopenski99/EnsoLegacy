@@ -1,5 +1,6 @@
 package com.ensolegacy.mobile.ui.collection
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -9,7 +10,9 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ensolegacy.mobile.EnsoApp
 import com.ensolegacy.mobile.data.SpeciesCatalog
 import com.ensolegacy.mobile.data.local.BonsaiEntity
+import com.ensolegacy.mobile.data.local.ReminderWithBonsai
 import com.ensolegacy.mobile.data.repository.BonsaiRepository
+import com.ensolegacy.mobile.data.repository.CareReminderRepository
 import com.ensolegacy.mobile.domain.BonsaiStage
 import com.ensolegacy.mobile.domain.HealthStatus
 import com.ensolegacy.mobile.domain.Species
@@ -17,7 +20,7 @@ import com.ensolegacy.mobile.domain.TreeFormData
 import java.time.Year
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -27,6 +30,7 @@ import kotlinx.coroutines.launch
  */
 class CollectionViewModel(
     private val repository: BonsaiRepository,
+    private val careReminderRepository: CareReminderRepository,
     speciesCatalog: SpeciesCatalog,
 ) : ViewModel() {
 
@@ -34,16 +38,30 @@ class CollectionViewModel(
     val species: List<Species> = speciesCatalog.all
 
     val uiState: StateFlow<CollectionUiState> =
-        repository.observeCollection()
-            .map { collection ->
-                CollectionUiState(
-                    collection = collection,
-                    stats = CollectionStats.from(collection),
-                    needsCare = collection.filter { it.needsCare() }.sortedBy { it.careSeverity() },
-                    needsSetup = collection.filter { !it.careScheduleSet },
-                    isLoading = false,
-                )
+        combine(
+            repository.observeCollection(),
+            careReminderRepository.observeAllWithBonsai(),
+        ) { collection, reminders ->
+            val now = System.currentTimeMillis()
+            Log.d("CollectionVM", "Total reminders: ${reminders.size}")
+            reminders.forEach { r ->
+                val daysUntil = (r.reminder.nextDueAt - now) / (24L * 60 * 60 * 1000)
+                Log.d("CollectionVM", "Reminder: ${r.bonsaiName} - ${r.reminder.type} - daysUntil=$daysUntil - nextDueAt=${r.reminder.nextDueAt}")
             }
+            val actionable = reminders.filter { r ->
+                val daysUntil = (r.reminder.nextDueAt - now) / (24L * 60 * 60 * 1000)
+                daysUntil < 0 || daysUntil <= 30
+            }
+            Log.d("CollectionVM", "Actionable reminders: ${actionable.size}")
+            CollectionUiState(
+                collection = collection,
+                stats = CollectionStats.from(collection),
+                needsCare = collection.filter { it.needsCare() }.sortedBy { it.careSeverity() },
+                needsSetup = collection.filter { !it.careScheduleSet },
+                dueReminders = actionable.sortedBy { it.reminder.nextDueAt },
+                isLoading = false,
+            )
+        }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),
@@ -81,7 +99,7 @@ class CollectionViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as EnsoApp
-                CollectionViewModel(app.bonsaiRepository, app.speciesCatalog)
+                CollectionViewModel(app.bonsaiRepository, app.careReminderRepository, app.speciesCatalog)
             }
         }
     }
@@ -99,6 +117,8 @@ data class CollectionUiState(
     val needsCare: List<BonsaiEntity> = emptyList(),
     /** Trees with no care schedule set up yet — surfaced as a gentle nudge. */
     val needsSetup: List<BonsaiEntity> = emptyList(),
+    /** All care reminders across the collection, sorted by nextDueAt ascending. */
+    val dueReminders: List<ReminderWithBonsai> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
 )

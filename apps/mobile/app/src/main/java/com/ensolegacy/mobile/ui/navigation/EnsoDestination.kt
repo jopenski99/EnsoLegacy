@@ -24,6 +24,6 @@ enum class EnsoDestination(
 
     companion object {
         /** Tab the app opens on. */
-        val START = COLLECTION
+        val START = DASHBOARD
     }
 }
