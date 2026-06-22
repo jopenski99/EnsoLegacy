@@ -62,19 +62,18 @@ fun ScheduleScreen(
     viewModel: ScheduleViewModel = viewModel(factory = ScheduleViewModel.Factory),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val now = System.currentTimeMillis()
 
-    val overdue = remember(uiState.reminders) { uiState.reminders.filter { it.reminder.nextDueAt < now } }
-    val dueSoon = remember(uiState.reminders) {
-        uiState.reminders.filter { r ->
+    val (overdue, dueSoon, upcoming) = remember(uiState.reminders) {
+        val now = System.currentTimeMillis()
+        val overdue = uiState.reminders.filter { it.reminder.nextDueAt < now }
+        val dueSoon = uiState.reminders.filter { r ->
             val days = (r.reminder.nextDueAt - now) / (24L * 60 * 60 * 1000)
             days in 0..14
         }
-    }
-    val upcoming = remember(uiState.reminders) {
-        uiState.reminders.filter { r ->
+        val upcoming = uiState.reminders.filter { r ->
             (r.reminder.nextDueAt - now) / (24L * 60 * 60 * 1000) > 14
         }
+        Triple(overdue, dueSoon, upcoming)
     }
 
     // Theme-aware badge colors computed at composable scope.
@@ -125,7 +124,23 @@ fun ScheduleScreen(
             )
         },
     ) { innerPadding ->
-        if (uiState.reminders.isEmpty()) {
+        val errorMsg = uiState.error
+        if (errorMsg != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = errorMsg,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontStyle = FontStyle.Italic,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        } else if (uiState.reminders.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -142,7 +157,7 @@ fun ScheduleScreen(
             }
         } else {
             LazyColumn(
-                modifier = Modifier.padding(innerPadding),
+                modifier = Modifier.fillMaxSize().padding(innerPadding),
                 contentPadding = PaddingValues(bottom = 24.dp),
             ) {
                 if (overdue.isNotEmpty()) {
@@ -189,7 +204,9 @@ fun ScheduleScreen(
     }
 
     rescheduleTarget?.let { target ->
-        val dateState = rememberDatePickerState(initialSelectedDateMillis = target.reminder.nextDueAt)
+        // Ensure nextDueAt is a valid timestamp. If it's 0 or negative, use current time.
+        val initialMillis = if (target.reminder.nextDueAt > 0) target.reminder.nextDueAt else System.currentTimeMillis()
+        val dateState = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
         DatePickerDialog(
             onDismissRequest = { rescheduleTarget = null },
             confirmButton = {
@@ -245,7 +262,7 @@ private fun ReminderRow(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    text = item.bonsaiName,
+                    text = item.bonsaiName ?: "(tree deleted)",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

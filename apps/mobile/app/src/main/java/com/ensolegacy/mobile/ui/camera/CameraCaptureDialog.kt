@@ -1,6 +1,7 @@
 package com.ensolegacy.mobile.ui.camera
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -18,17 +19,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,6 +45,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import android.view.WindowManager
 import com.ensolegacy.mobile.EnsoApp
 
 /**
@@ -86,6 +86,13 @@ fun CameraCaptureDialog(
             }
         }
 
+        var capturing by remember { mutableStateOf(false) }
+        @Suppress("DEPRECATION")
+        val rotation = remember {
+            (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.rotation
+        }
+        val imageCapture = remember { ImageCapture.Builder().setTargetRotation(rotation).build() }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -93,8 +100,7 @@ fun CameraCaptureDialog(
         ) {
             if (hasPermission) {
                 CameraPreview(
-                    onCaptured = onCaptured,
-                    imageStore = imageStore,
+                    imageCapture = imageCapture,
                     modifier = Modifier.fillMaxSize(),
                 )
             } else {
@@ -104,14 +110,48 @@ fun CameraCaptureDialog(
                 )
             }
 
-            IconButton(
-                onClick = onDismiss,
+            Row(
                 modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .statusBarsPadding()
-                    .padding(8.dp),
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(bottom = 120.dp)
+                    .padding(horizontal = 32.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Default.Close, contentDescription = "Close camera", tint = Color.White)
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel", color = Color.White)
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(CircleShape)
+                        .background(if (capturing) Color.Gray else Color.White)
+                        .border(4.dp, Color.White.copy(alpha = 0.6f), CircleShape)
+                        .clickable(enabled = !capturing && hasPermission) {
+                            capturing = true
+                            val output = imageStore.newImageFile()
+                            val options = ImageCapture.OutputFileOptions.Builder(output.file).build()
+                            imageCapture.takePicture(
+                                options,
+                                ContextCompat.getMainExecutor(context),
+                                object : ImageCapture.OnImageSavedCallback {
+                                    override fun onImageSaved(results: ImageCapture.OutputFileResults) {
+                                        capturing = false
+                                        onCaptured(output.relativePath)
+                                    }
+
+                                    override fun onError(exception: ImageCaptureException) {
+                                        capturing = false
+                                        imageStore.delete(output.relativePath)
+                                    }
+                                },
+                            )
+                        },
+                )
+
+                Spacer(Modifier.width(64.dp))
             }
         }
     }
@@ -119,14 +159,11 @@ fun CameraCaptureDialog(
 
 @Composable
 private fun CameraPreview(
-    onCaptured: (String) -> Unit,
-    imageStore: com.ensolegacy.mobile.data.ImageStore,
+    imageCapture: ImageCapture,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val imageCapture = remember { ImageCapture.Builder().build() }
-    var capturing by remember { mutableStateOf(false) }
 
     Box(modifier = modifier) {
         AndroidView(
@@ -134,6 +171,7 @@ private fun CameraPreview(
             factory = { ctx ->
                 val previewView = PreviewView(ctx).apply {
                     scaleType = PreviewView.ScaleType.FILL_CENTER
+                    implementationMode = PreviewView.ImplementationMode.COMPATIBLE
                 }
                 val providerFuture = ProcessCameraProvider.getInstance(ctx)
                 providerFuture.addListener({
@@ -151,38 +189,6 @@ private fun CameraPreview(
                 }, ContextCompat.getMainExecutor(ctx))
                 previewView
             },
-        )
-
-        // Shutter button.
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(bottom = 40.dp)
-                .size(72.dp)
-                .clip(CircleShape)
-                .background(if (capturing) Color.Gray else Color.White)
-                .border(4.dp, Color.White.copy(alpha = 0.6f), CircleShape)
-                .clickable(enabled = !capturing) {
-                    capturing = true
-                    val output = imageStore.newImageFile()
-                    val options = ImageCapture.OutputFileOptions.Builder(output.file).build()
-                    imageCapture.takePicture(
-                        options,
-                        ContextCompat.getMainExecutor(context),
-                        object : ImageCapture.OnImageSavedCallback {
-                            override fun onImageSaved(results: ImageCapture.OutputFileResults) {
-                                capturing = false
-                                onCaptured(output.relativePath)
-                            }
-
-                            override fun onError(exception: ImageCaptureException) {
-                                capturing = false
-                                imageStore.delete(output.relativePath)
-                            }
-                        },
-                    )
-                },
         )
     }
 }

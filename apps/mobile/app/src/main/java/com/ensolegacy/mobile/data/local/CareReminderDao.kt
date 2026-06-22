@@ -12,7 +12,8 @@ interface CareReminderDao {
 
     @Query(
         "SELECT care_reminder.*, bonsai.name as bonsaiName " +
-            "FROM care_reminder JOIN bonsai ON care_reminder.bonsaiId = bonsai.id " +
+            "FROM care_reminder " +
+            "LEFT JOIN bonsai ON care_reminder.bonsaiId = bonsai.id " +
             "ORDER BY care_reminder.nextDueAt ASC",
     )
     fun observeAllWithBonsai(): Flow<List<ReminderWithBonsai>>

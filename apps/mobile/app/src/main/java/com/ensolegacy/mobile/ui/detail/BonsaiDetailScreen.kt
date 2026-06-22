@@ -87,23 +87,12 @@ import com.ensolegacy.mobile.domain.BonsaiStage
 import com.ensolegacy.mobile.domain.CareDefault
 import com.ensolegacy.mobile.domain.CareType
 import com.ensolegacy.mobile.domain.HealthStatus
+import com.ensolegacy.mobile.domain.careStatusOf
+import com.ensolegacy.mobile.ui.components.CareStatusPill
 import com.ensolegacy.mobile.domain.Placement
 import com.ensolegacy.mobile.ui.camera.CameraCaptureDialog
 import com.ensolegacy.mobile.ui.collection.AddTreeSheet
 import com.ensolegacy.mobile.ui.components.HealthPill
-import androidx.compose.foundation.isSystemInDarkTheme
-import com.ensolegacy.mobile.ui.theme.CriticalDarkBg
-import com.ensolegacy.mobile.ui.theme.CriticalDarkText
-import com.ensolegacy.mobile.ui.theme.HealthCriticalBg
-import com.ensolegacy.mobile.ui.theme.HealthCriticalText
-import com.ensolegacy.mobile.ui.theme.HealthHealthyBg
-import com.ensolegacy.mobile.ui.theme.HealthHealthyText
-import com.ensolegacy.mobile.ui.theme.HealthNeedsCareBg
-import com.ensolegacy.mobile.ui.theme.HealthNeedsCareText
-import com.ensolegacy.mobile.ui.theme.HealthyDarkBg
-import com.ensolegacy.mobile.ui.theme.HealthyDarkText
-import com.ensolegacy.mobile.ui.theme.RecoveringDarkBg
-import com.ensolegacy.mobile.ui.theme.RecoveringDarkText
 import java.time.Instant
 import java.time.Year
 import java.time.ZoneId
@@ -685,40 +674,6 @@ private fun ReminderCards(
         ) {
             DatePicker(state = dateState)
         }
-    }
-}
-
-private enum class CareStatus(val label: String) {
-    ON_SCHEDULE("On schedule"),
-    DUE_SOON("Due soon"),
-    OVERDUE("Overdue"),
-}
-
-/** Due in the past = overdue; within ~2 weeks = due soon; otherwise on schedule. */
-private fun careStatusOf(nextDueAt: Long, now: Long): CareStatus {
-    val daysUntil = (nextDueAt - now) / (24L * 60 * 60 * 1000)
-    return when {
-        daysUntil < 0 -> CareStatus.OVERDUE
-        daysUntil <= 14 -> CareStatus.DUE_SOON
-        else -> CareStatus.ON_SCHEDULE
-    }
-}
-
-@Composable
-private fun CareStatusPill(status: CareStatus) {
-    val dark = isSystemInDarkTheme()
-    val (background, text) = when (status) {
-        CareStatus.ON_SCHEDULE -> if (dark) HealthyDarkBg to HealthyDarkText else HealthHealthyBg to HealthHealthyText
-        CareStatus.DUE_SOON -> if (dark) RecoveringDarkBg to RecoveringDarkText else HealthNeedsCareBg to HealthNeedsCareText
-        CareStatus.OVERDUE -> if (dark) CriticalDarkBg to CriticalDarkText else HealthCriticalBg to HealthCriticalText
-    }
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(background)
-            .padding(horizontal = 10.dp, vertical = 3.dp),
-    ) {
-        Text(text = status.label, style = MaterialTheme.typography.labelSmall, color = text)
     }
 }
 

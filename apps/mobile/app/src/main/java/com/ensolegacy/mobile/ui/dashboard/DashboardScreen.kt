@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,12 +54,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.ensolegacy.mobile.EnsoApp
 import com.ensolegacy.mobile.data.local.BonsaiEntity
+import com.ensolegacy.mobile.data.local.ReminderWithBonsai
 import com.ensolegacy.mobile.domain.BonsaiStage
+import com.ensolegacy.mobile.domain.CareType
 import com.ensolegacy.mobile.domain.HealthStatus
+import com.ensolegacy.mobile.domain.careStatusOf
+import com.ensolegacy.mobile.domain.relativeDueLabel
 import com.ensolegacy.mobile.ui.collection.AgeBucket
 import com.ensolegacy.mobile.ui.collection.CollectionStats
 import com.ensolegacy.mobile.ui.collection.CollectionViewModel
-import com.ensolegacy.mobile.ui.components.HealthPill
+import com.ensolegacy.mobile.ui.components.CareStatusPill
 import com.ensolegacy.mobile.ui.components.PulsingDot
 import com.ensolegacy.mobile.ui.components.healthColor
 
@@ -128,7 +135,7 @@ fun DashboardScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 DashboardCard(stats = uiState.stats)
-                NeedsCareSection(trees = uiState.needsCare, onTreeClick = onTreeClick)
+                NeedsCareSection(reminders = uiState.dueReminders, onTreeClick = onTreeClick)
                 SetUpCareSection(trees = uiState.needsSetup, onTreeClick = onTreeClick)
             }
         }
@@ -204,20 +211,22 @@ private fun DashboardCard(stats: CollectionStats) {
 }
 
 /**
- * Trees that need care, worst first. Driven by health today; the spec's other
- * signals (overdue reminders, unset care schedule, undocumented trees) fold in
- * here as those features ship. When nothing needs care, shows a calm
- * all-clear rather than empty space.
+ * Upcoming/past-due care tasks across the collection, shown as a horizontal
+ * scrollable row of reminder cards. Each card shows the task type (emoji +
+ * label), the tree name, a relative due date, and a status pill. When every
+ * reminder is more than 30 days out and none are overdue, shows an all-clear.
+ * The actionable filtering is done in [CollectionViewModel] — this composable
+ * receives only overdue / due-soon reminders.
  */
 @Composable
-private fun NeedsCareSection(trees: List<BonsaiEntity>, onTreeClick: (Long) -> Unit) {
+private fun NeedsCareSection(reminders: List<ReminderWithBonsai>, onTreeClick: (Long) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = "Needs care",
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        if (trees.isEmpty()) {
+        if (reminders.isEmpty()) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -231,11 +240,48 @@ private fun NeedsCareSection(trees: List<BonsaiEntity>, onTreeClick: (Long) -> U
                 )
             }
         } else {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                trees.forEach { tree ->
-                    NeedsCareRow(tree = tree, onClick = { onTreeClick(tree.id) })
+            val now = System.currentTimeMillis()
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 0.dp),
+            ) {
+                items(reminders, key = { it.reminder.id }) { item ->
+                    CareReminderCard(item = item, now = now, onClick = { onTreeClick(item.reminder.bonsaiId) })
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CareReminderCard(item: ReminderWithBonsai, now: Long, onClick: () -> Unit) {
+    val type = CareType.fromValue(item.reminder.type)
+    val status = careStatusOf(item.reminder.nextDueAt, now)
+    Card(
+        onClick = onClick,
+        modifier = Modifier.width(170.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = "${type.emoji} ${type.label}",
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Text(
+                text = item.bonsaiName ?: "(tree deleted)",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = relativeDueLabel(item.reminder.nextDueAt, now),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            CareStatusPill(status = status)
         }
     }
 }
@@ -290,35 +336,6 @@ private fun SetUpCareRow(tree: BonsaiEntity, onClick: () -> Unit) {
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
             )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun NeedsCareRow(tree: BonsaiEntity, onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            TreeAvatar(tree = tree, placeholderBg = MaterialTheme.colorScheme.surface)
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = tree.name, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = tree.species,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            HealthPill(health = HealthStatus.fromValue(tree.health))
         }
     }
 }
