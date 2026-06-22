@@ -1,9 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  // Allow importing the workspace shared package as raw TS source.
-  transpilePackages: ["@enso/shared"],
-  output: "standalone",
+  output: 'export',
+  basePath: '/enso-legacy',        // ← your repo name, exact case
+  assetPrefix: '/enso-legacy/',    // ← same, with trailing slash
+  images: {
+    unoptimized: true,             // ← required, Pages can't run Next image optimizer
+  },
 };
 
 export default nextConfig;
