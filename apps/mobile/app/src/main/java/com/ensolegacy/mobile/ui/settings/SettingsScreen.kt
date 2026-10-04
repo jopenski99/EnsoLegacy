@@ -65,11 +65,13 @@ fun SettingsScreen(
     val deviceBackups by backupViewModel.deviceBackups.collectAsStateWithLifecycle()
     val readableBackups by backupViewModel.readableBackups.collectAsStateWithLifecycle()
     val backupWorking by backupViewModel.working.collectAsStateWithLifecycle()
-    var confirmRestore by remember { mutableStateOf<Uri?>(null) }
+    // (displayName?, uri) — the name rides along so the PIN/lockout messages can name the file.
+    var confirmRestore by remember { mutableStateOf<Pair<String?, Uri>?>(null) }
     var showBackupChooser by remember { mutableStateOf(false) }
+    var showExportPin by remember { mutableStateOf(false) }
     val pickBackupLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
-    ) { uri -> if (uri != null) confirmRestore = uri }
+    ) { uri -> if (uri != null) confirmRestore = (null as String?) to uri }
 
     // Recheck notification status whenever the user returns from system settings.
     var notifEnabled by remember {
@@ -174,7 +176,7 @@ fun SettingsScreen(
                             )
                         }
                     },
-                    onClick = { if (!backupWorking) backupViewModel.export() },
+                    onClick = { if (!backupWorking) showExportPin = true },
                 )
                 SettingsRow(
                     label = "Restore from this device",
@@ -190,7 +192,8 @@ fun SettingsScreen(
                     onClick = if (readableBackups.isNotEmpty() && !backupWorking) {
                         {
                             if (readableBackups.size == 1) {
-                                confirmRestore = readableBackups.first().uri
+                                confirmRestore = readableBackups.first()
+                                    .let { it.displayName to it.uri }
                             } else {
                                 showBackupChooser = true
                             }
@@ -271,7 +274,7 @@ fun SettingsScreen(
                                 .fillMaxWidth()
                                 .clickable {
                                     showBackupChooser = false
-                                    confirmRestore = info.uri
+                                    confirmRestore = info.displayName to info.uri
                                 }
                                 .padding(vertical = 10.dp),
                         )
@@ -284,8 +287,20 @@ fun SettingsScreen(
         )
     }
 
+    // Export is PIN-protected (format v2) — collect it before writing anything.
+    if (showExportPin) {
+        ExportPinDialog(
+            working = backupWorking,
+            onConfirm = { pin ->
+                showExportPin = false
+                backupViewModel.export(pin)
+            },
+            onDismiss = { showExportPin = false },
+        )
+    }
+
     // Restore is a full replace — confirm before wiping current data.
-    confirmRestore?.let { uri ->
+    confirmRestore?.let { (name, uri) ->
         AlertDialog(
             onDismissRequest = { confirmRestore = null },
             title = { Text("Restore backup?") },
@@ -293,7 +308,7 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(onClick = {
                     confirmRestore = null
-                    backupViewModel.restore(uri)
+                    backupViewModel.beginRestore(uri, name)
                 }) { Text("Restore") }
             },
             dismissButton = {

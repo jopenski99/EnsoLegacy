@@ -11,6 +11,8 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ensolegacy.mobile.EnsoApp
 import com.ensolegacy.mobile.data.AppPreferences
 import com.ensolegacy.mobile.data.BackupManager
+import com.ensolegacy.mobile.data.BackupPinLockout
+import com.ensolegacy.mobile.data.WrongBackupPinException
 import com.ensolegacy.mobile.data.repository.BonsaiRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -28,6 +30,7 @@ import kotlinx.coroutines.launch
 class BackupViewModel(
     private val backupManager: BackupManager,
     private val appPreferences: AppPreferences,
+    private val pinLockout: BackupPinLockout,
     bonsaiRepository: BonsaiRepository,
 ) : ViewModel() {
 
@@ -42,6 +45,10 @@ class BackupViewModel(
     /** Newest *readable* backup — what the fresh-install prompt offers. */
     private val _promptBackup = MutableStateFlow<BackupManager.BackupFileInfo?>(null)
     val promptBackup: StateFlow<BackupManager.BackupFileInfo?> = _promptBackup
+
+    /** Whether "All files access" is granted (API 30+); rechecked on every refresh. */
+    private val _allFilesAccess = MutableStateFlow(backupManager.hasAllFilesAccess())
+    val allFilesAccess: StateFlow<Boolean> = _allFilesAccess
 
     /**
      * Null until Room emits its first list. The fresh-install prompt keys off
@@ -58,12 +65,28 @@ class BackupViewModel(
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message
 
-    /** Whether "All files access" is granted (API 30+); rechecked on every refresh. */
-    private val _allFilesAccess = MutableStateFlow(backupManager.hasAllFilesAccess())
-    val allFilesAccess: StateFlow<Boolean> = _allFilesAccess
-
     private val _promptDismissed = MutableStateFlow(appPreferences.backupRestorePromptDismissed)
     val promptDismissed: StateFlow<Boolean> = _promptDismissed
+
+    /**
+     * True once the first detection pass has finished (found something or
+     * not). MainActivity waits for this before requesting the notification
+     * permission, so the system dialog never lands on top of a restore prompt.
+     */
+    private val _detectionSettled = MutableStateFlow(false)
+    val detectionSettled: StateFlow<Boolean> = _detectionSettled
+
+    // --- PIN state ------------------------------------------------------------
+
+    /** An encrypted restore waiting for its PIN (dialog data). */
+    data class PendingPinRestore(val uri: Uri, val displayName: String, val fingerprint: String)
+
+    private val _pendingPin = MutableStateFlow<PendingPinRestore?>(null)
+    val pendingPin: StateFlow<PendingPinRestore?> = _pendingPin
+
+    /** Inline error for the PIN dialog (wrong PIN, attempt counter). */
+    private val _pinError = MutableStateFlow<String?>(null)
+    val pinError: StateFlow<String?> = _pinError
 
     init {
         refreshDeviceBackup()
@@ -94,14 +117,15 @@ class BackupViewModel(
                 _readableBackups.value = emptyList()
                 _promptBackup.value = null
             }
+            _detectionSettled.value = true
         }
     }
 
-    fun export() {
+    fun export(pin: String) {
         if (_working.value) return
         viewModelScope.launch {
             _working.value = true
-            runCatching { backupManager.export() }
+            runCatching { backupManager.export(pin) }
                 .onSuccess { r ->
                     _message.value = "Backup saved to Documents/Enso as ${r.displayName} " +
                         "(${count(r.trees, "tree")}, ${count(r.photos, "photo")}). " +
@@ -114,11 +138,77 @@ class BackupViewModel(
         }
     }
 
-    fun restore(uri: Uri) {
+    /**
+     * Start a restore: fingerprint the file and check the lockout before
+     * anything else, then route encrypted backups through the PIN dialog.
+     */
+    fun beginRestore(uri: Uri, displayName: String? = null) {
+        if (_working.value) return
+        viewModelScope.launch {
+            _pinError.value = null
+            runCatching {
+                val fingerprint = pinLockout.fingerprintOf(uri)
+                Triple(fingerprint, pinLockout.statusFor(fingerprint), backupManager.peekVersion(uri))
+            }.onSuccess { (fingerprint, status, version) ->
+                val name = displayName ?: uri.lastPathSegment ?: "backup"
+                when {
+                    status.locked ->
+                        _message.value = "\"$name\" is locked after " +
+                            "${BackupPinLockout.MAX_FAILURES} incorrect PIN attempts."
+                    version >= 2 ->
+                        _pendingPin.value = PendingPinRestore(uri, name, fingerprint)
+                    else -> restorePlaintext(uri)
+                }
+            }.onFailure { _message.value = "Couldn't read that backup: ${it.message}" }
+        }
+    }
+
+    /** PIN submitted from the restore dialog. */
+    fun confirmPin(pin: String) {
+        val pending = _pendingPin.value ?: return
         if (_working.value) return
         viewModelScope.launch {
             _working.value = true
-            runCatching { backupManager.restoreFrom(uri) }
+            runCatching { backupManager.restoreFrom(pending.uri, pin) }
+                .onSuccess { s ->
+                    pinLockout.reset(pending.fingerprint)
+                    _pendingPin.value = null
+                    _pinError.value = null
+                    _message.value = "Restored ${count(s.trees, "tree")}, " +
+                        "${count(s.milestones, "milestone")}, ${count(s.photos, "photo")}."
+                }
+                .onFailure { e ->
+                    if (e is WrongBackupPinException) {
+                        val status = pinLockout.recordFailure(pending.fingerprint, pending.displayName)
+                        if (status.locked) {
+                            _pendingPin.value = null
+                            _pinError.value = null
+                            _message.value = "Incorrect PIN. \"${pending.displayName}\" is now " +
+                                "locked after ${BackupPinLockout.MAX_FAILURES} failed attempts."
+                        } else {
+                            _pinError.value = "Incorrect PIN — attempt ${status.failures} " +
+                                "of ${BackupPinLockout.MAX_FAILURES}."
+                        }
+                    } else {
+                        _pendingPin.value = null
+                        _pinError.value = null
+                        _message.value = "Couldn't restore that backup: ${e.message}"
+                    }
+                }
+            _working.value = false
+        }
+    }
+
+    fun cancelPinRestore() {
+        _pendingPin.value = null
+        _pinError.value = null
+    }
+
+    /** Legacy (v1, unencrypted) backups restore without a PIN. */
+    private fun restorePlaintext(uri: Uri) {
+        viewModelScope.launch {
+            _working.value = true
+            runCatching { backupManager.restoreFrom(uri, null) }
                 .onSuccess { s ->
                     _message.value = "Restored ${count(s.trees, "tree")}, " +
                         "${count(s.milestones, "milestone")}, ${count(s.photos, "photo")}."
@@ -146,7 +236,12 @@ class BackupViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as EnsoApp
-                BackupViewModel(app.backupManager, app.appPreferences, app.bonsaiRepository)
+                BackupViewModel(
+                    app.backupManager,
+                    app.appPreferences,
+                    app.backupPinLockout,
+                    app.bonsaiRepository,
+                )
             }
         }
     }

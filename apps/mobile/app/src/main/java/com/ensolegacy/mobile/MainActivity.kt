@@ -23,6 +23,7 @@ import com.ensolegacy.mobile.ui.MainScaffold
 import com.ensolegacy.mobile.ui.onboarding.OnboardingScreen
 import com.ensolegacy.mobile.ui.onboarding.OnboardingViewModel
 import com.ensolegacy.mobile.ui.settings.BackupViewModel
+import com.ensolegacy.mobile.ui.settings.RestorePinDialog
 import com.ensolegacy.mobile.ui.theme.EnsoLegacyTheme
 
 class MainActivity : ComponentActivity() {
@@ -38,11 +39,28 @@ class MainActivity : ComponentActivity() {
                 ) { /* granted or denied — system dialog handled the prompt */ }
 
                 if (onboardingComplete) {
-                    // Request POST_NOTIFICATIONS on Android 13+ the first time the main
-                    // app is shown. Fires once per composition entry (i.e. once after
-                    // onboarding completes, and not on every recomposition).
-                    LaunchedEffect(Unit) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    val backup: BackupViewModel = viewModel(factory = BackupViewModel.Factory)
+                    val treeCount by backup.treeCount.collectAsStateWithLifecycle()
+                    val promptBackup by backup.promptBackup.collectAsStateWithLifecycle()
+                    val promptDismissed by backup.promptDismissed.collectAsStateWithLifecycle()
+                    val detectionSettled by backup.detectionSettled.collectAsStateWithLifecycle()
+                    val backupMessage by backup.message.collectAsStateWithLifecycle()
+                    val pendingPin by backup.pendingPin.collectAsStateWithLifecycle()
+                    val pinError by backup.pinError.collectAsStateWithLifecycle()
+                    val backupWorking by backup.working.collectAsStateWithLifecycle()
+                    var promptHidden by remember { mutableStateOf(false) }
+
+                    val found = promptBackup
+                    val restorePromptVisible =
+                        !promptHidden && !promptDismissed && treeCount == 0 && found != null
+
+                    // Request POST_NOTIFICATIONS on Android 13+ once backup
+                    // detection has settled and no restore UI is in the way —
+                    // the system dialog would otherwise land on top of the
+                    // restore prompt / PIN dialog.
+                    LaunchedEffect(detectionSettled, restorePromptVisible, pendingPin) {
+                        if (detectionSettled && !restorePromptVisible && pendingPin == null &&
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                             ContextCompat.checkSelfPermission(
                                 this@MainActivity,
                                 Manifest.permission.POST_NOTIFICATIONS,
@@ -57,15 +75,7 @@ class MainActivity : ComponentActivity() {
                     // device plus an empty collection means the owner probably
                     // reinstalled. "Not now" dismisses it for good — restore
                     // stays available in Settings either way.
-                    val backup: BackupViewModel = viewModel(factory = BackupViewModel.Factory)
-                    val treeCount by backup.treeCount.collectAsStateWithLifecycle()
-                    val promptBackup by backup.promptBackup.collectAsStateWithLifecycle()
-                    val promptDismissed by backup.promptDismissed.collectAsStateWithLifecycle()
-                    val backupMessage by backup.message.collectAsStateWithLifecycle()
-                    var promptHidden by remember { mutableStateOf(false) }
-
-                    val found = promptBackup
-                    if (!promptHidden && !promptDismissed && treeCount == 0 && found != null) {
+                    if (restorePromptVisible) {
                         AlertDialog(
                             onDismissRequest = {
                                 promptHidden = true
@@ -78,7 +88,7 @@ class MainActivity : ComponentActivity() {
                             confirmButton = {
                                 TextButton(onClick = {
                                     promptHidden = true
-                                    backup.restore(found.uri)
+                                    backup.beginRestore(found.uri, found.displayName)
                                 }) { Text("Restore") }
                             },
                             dismissButton = {
@@ -87,6 +97,18 @@ class MainActivity : ComponentActivity() {
                                     backup.dismissRestorePrompt()
                                 }) { Text("Not now") }
                             },
+                        )
+                    }
+
+                    // PIN prompt for encrypted backups (from the fresh-install
+                    // prompt or any Settings restore path).
+                    pendingPin?.let { pending ->
+                        RestorePinDialog(
+                            displayName = pending.displayName,
+                            error = pinError,
+                            working = backupWorking,
+                            onConfirm = backup::confirmPin,
+                            onDismiss = backup::cancelPinRestore,
                         )
                     }
 

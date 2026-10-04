@@ -2,7 +2,7 @@
 
 Kotlin / Jetpack Compose Android app for Ensō Legacy. See the [root CLAUDE.md](../../CLAUDE.md) for product context, phases, tone, and domain concepts.
 
-This is where the **core product** lives (Phase 2): collection, add/edit bonsai, species browser, milestones (10-photo flow), stage transitions, care reminders, local backup export/restore (`data/BackupManager` — full-record zip in `Documents/Enso`, two-tier detection: MediaStore for current-install files, optional All-files access for previous-install files), Tree Passport export, settings.
+This is where the **core product** lives (Phase 2): collection, add/edit bonsai, species browser, milestones (10-photo flow), stage transitions, care reminders, local backup export/restore (`data/BackupManager` — PIN-encrypted full-record zip in `Documents/Enso`, format v2: PBKDF2→AES-GCM, 3-strike PIN lockout via `BackupPinLockout`; two-tier detection: MediaStore for current-install files, optional All-files access for previous-install files), Tree Passport export, settings.
 
 ## Architecture — MVVM (strict)
 Keep the layers separated; never skip a layer.
