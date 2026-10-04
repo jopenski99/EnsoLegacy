@@ -5,6 +5,10 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- Required on Android 13+ (API 33) to post care-reminder notifications. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Optional "All files access" (API 30+): lets Settings spot backups left
+         behind by a previous install. Never requested at launch — only from
+         the Backup section. Play distribution will need a declaration form. -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
 
     <!-- A camera is preferred for capturing photos but not required to install
          (gallery import still works on camera-less devices). -->

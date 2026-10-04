@@ -13,4 +13,16 @@ interface StageTransitionDao {
 
     @Insert
     suspend fun insert(transition: StageTransitionEntity)
+
+    /** One-shot snapshot of every transition (backup export). */
+    @Query("SELECT * FROM stage_transition")
+    suspend fun getAll(): List<StageTransitionEntity>
+
+    /** Bulk insert for backup restore (rows keep their original ids). */
+    @Insert
+    suspend fun insertAll(transitions: List<StageTransitionEntity>)
+
+    /** Wipes the table — backup restore does a full replace. */
+    @Query("DELETE FROM stage_transition")
+    suspend fun deleteAll()
 }

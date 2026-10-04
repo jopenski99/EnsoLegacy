@@ -53,8 +53,16 @@ class ImageStore(private val context: Context) {
         runCatching { resolve(relativePath).delete() }
     }
 
+    /** Every stored image file (backup export). */
+    fun listAll(): List<File> = imagesDir.listFiles()?.filter { it.isFile }.orEmpty()
+
+    /** Deletes every stored image (backup restore wipes before re-extracting). */
+    fun deleteAll() {
+        imagesDir.listFiles()?.forEach { it.delete() }
+    }
+
     companion object {
-        private const val DIR = "images"
+        internal const val DIR = "images"
     }
 }
 

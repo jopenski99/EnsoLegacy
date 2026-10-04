@@ -17,6 +17,18 @@ interface BonsaiDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(bonsai: BonsaiEntity): Long
 
+    /** One-shot snapshot of every tree (backup export). */
+    @Query("SELECT * FROM bonsai")
+    suspend fun getAll(): List<BonsaiEntity>
+
+    /** Bulk insert for backup restore (rows keep their original ids). */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(bonsai: List<BonsaiEntity>)
+
+    /** Wipes the table — backup restore does a full replace. */
+    @Query("DELETE FROM bonsai")
+    suspend fun deleteAll()
+
     // Targeted column updates. These avoid the REPLACE insert above, which on a
     // PK conflict deletes the row first — cascading away the tree's reminders,
     // milestones, and photos before re-inserting it.

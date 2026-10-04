@@ -18,14 +18,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -43,12 +47,29 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(
+    backupViewModel: BackupViewModel = viewModel(factory = BackupViewModel.Factory),
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Backup section state (the result message dialog lives in MainActivity).
+    val deviceBackups by backupViewModel.deviceBackups.collectAsStateWithLifecycle()
+    val readableBackups by backupViewModel.readableBackups.collectAsStateWithLifecycle()
+    val backupWorking by backupViewModel.working.collectAsStateWithLifecycle()
+    var confirmRestore by remember { mutableStateOf<Uri?>(null) }
+    var showBackupChooser by remember { mutableStateOf(false) }
+    val pickBackupLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri -> if (uri != null) confirmRestore = uri }
 
     // Recheck notification status whenever the user returns from system settings.
     var notifEnabled by remember {
@@ -58,6 +79,9 @@ fun SettingsScreen() {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 notifEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
+                // Returning from a system settings screen may have changed the
+                // All-files grant or the backup folder's contents.
+                backupViewModel.refreshDeviceBackup()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -137,6 +161,81 @@ fun SettingsScreen() {
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Spacer(modifier = Modifier.height(24.dp))
 
+            SettingsSectionHeader("Backup")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                SettingsRow(
+                    label = "Export backup",
+                    description = "Trees, photos, and history saved to Documents/Enso",
+                    trailingContent = {
+                        if (backupWorking) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                            )
+                        }
+                    },
+                    onClick = { if (!backupWorking) backupViewModel.export() },
+                )
+                SettingsRow(
+                    label = "Restore from this device",
+                    description = when {
+                        deviceBackups.isEmpty() -> "No backup found on this device"
+                        readableBackups.isEmpty() ->
+                            "${deviceBackups.size} found, but not readable here — use the file picker below"
+                        readableBackups.size == 1 ->
+                            "${readableBackups.first().displayName} · " +
+                                backupDate(readableBackups.first().dateAdded)
+                        else -> "${readableBackups.size} backups found — tap to choose"
+                    },
+                    onClick = if (readableBackups.isNotEmpty() && !backupWorking) {
+                        {
+                            if (readableBackups.size == 1) {
+                                confirmRestore = readableBackups.first().uri
+                            } else {
+                                showBackupChooser = true
+                            }
+                        }
+                    } else {
+                        null
+                    },
+                )
+            } else {
+                SettingsRow(
+                    label = "On-device backup",
+                    description = "Saving to shared storage needs Android 10 or newer",
+                )
+            }
+            SettingsRow(
+                label = "Choose a backup file…",
+                description = "Restore from an Enso backup zip",
+                onClick = {
+                    if (!backupWorking) {
+                        pickBackupLauncher.launch(arrayOf("application/zip", "application/octet-stream"))
+                    }
+                },
+            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val allFilesAccess by backupViewModel.allFilesAccess.collectAsStateWithLifecycle()
+                SettingsRow(
+                    label = "Find older backups",
+                    description = "All-files access — spots backups left by a previous install",
+                    trailingContent = {
+                        StatusBadge(enabled = allFilesAccess)
+                    },
+                    onClick = {
+                        val intent =
+                            Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                                data = Uri.parse("package:${context.packageName}")
+                            }
+                        context.startActivity(intent)
+                    },
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Spacer(modifier = Modifier.height(24.dp))
+
             SettingsSectionHeader("About")
             SettingsRow(
                 label = "Version",
@@ -156,9 +255,62 @@ fun SettingsScreen() {
             Spacer(modifier = Modifier.height(40.dp))
         }
     }
+
+    // Multiple backups on the device — let the owner pick which one to restore.
+    if (showBackupChooser && readableBackups.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = { showBackupChooser = false },
+            title = { Text("Choose a backup") },
+            text = {
+                Column {
+                    readableBackups.forEach { info ->
+                        Text(
+                            text = info.displayName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    showBackupChooser = false
+                                    confirmRestore = info.uri
+                                }
+                                .padding(vertical = 10.dp),
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showBackupChooser = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    // Restore is a full replace — confirm before wiping current data.
+    confirmRestore?.let { uri ->
+        AlertDialog(
+            onDismissRequest = { confirmRestore = null },
+            title = { Text("Restore backup?") },
+            text = { Text("This replaces everything currently in the app with the contents of the backup.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmRestore = null
+                    backupViewModel.restore(uri)
+                }) { Text("Restore") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmRestore = null }) { Text("Cancel") }
+            },
+        )
+    }
 }
 
 // ---------------------------------------------------------------------------
+
+private val backupDayFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
+
+/** MediaStore DATE_ADDED is epoch *seconds*. */
+private fun backupDate(epochSeconds: Long): String =
+    Instant.ofEpochSecond(epochSeconds).atZone(ZoneId.systemDefault()).toLocalDate()
+        .format(backupDayFormatter)
 
 @Composable
 private fun SettingsSectionHeader(title: String) {

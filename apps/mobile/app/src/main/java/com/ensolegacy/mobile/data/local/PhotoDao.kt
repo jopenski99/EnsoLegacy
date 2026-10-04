@@ -20,6 +20,14 @@ interface PhotoDao {
     @Query("SELECT * FROM photo WHERE id = :id")
     suspend fun getById(id: Long): PhotoEntity?
 
+    /** One-shot snapshot of every photo row (backup export). */
+    @Query("SELECT * FROM photo")
+    suspend fun getAll(): List<PhotoEntity>
+
+    /** Wipes the table — backup restore does a full replace. */
+    @Query("DELETE FROM photo")
+    suspend fun deleteAll()
+
     /** Snapshot of a milestone's photos, used to delete their files on cascade. */
     @Query("SELECT * FROM photo WHERE milestoneId = :milestoneId")
     suspend fun listForMilestone(milestoneId: Long): List<PhotoEntity>

@@ -29,8 +29,16 @@ interface CareReminderDao {
     @Query("UPDATE care_reminder SET nextDueAt = :nextDueAt WHERE id = :id")
     suspend fun updateNextDue(id: Long, nextDueAt: Long)
 
+    /** One-shot snapshot of every reminder (backup export). */
+    @Query("SELECT * FROM care_reminder")
+    suspend fun getAll(): List<CareReminderEntity>
+
     @Insert
     suspend fun insertAll(reminders: List<CareReminderEntity>)
+
+    /** Wipes the table — backup restore does a full replace. */
+    @Query("DELETE FROM care_reminder")
+    suspend fun deleteAll()
 
     @Query("DELETE FROM care_reminder WHERE bonsaiId = :bonsaiId")
     suspend fun deleteForBonsai(bonsaiId: Long)

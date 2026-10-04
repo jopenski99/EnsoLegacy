@@ -8,14 +8,21 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ensolegacy.mobile.ui.MainScaffold
 import com.ensolegacy.mobile.ui.onboarding.OnboardingScreen
 import com.ensolegacy.mobile.ui.onboarding.OnboardingViewModel
+import com.ensolegacy.mobile.ui.settings.BackupViewModel
 import com.ensolegacy.mobile.ui.theme.EnsoLegacyTheme
 
 class MainActivity : ComponentActivity() {
@@ -45,6 +52,54 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     MainScaffold()
+
+                    // Fresh-install restore prompt: a readable backup on this
+                    // device plus an empty collection means the owner probably
+                    // reinstalled. "Not now" dismisses it for good — restore
+                    // stays available in Settings either way.
+                    val backup: BackupViewModel = viewModel(factory = BackupViewModel.Factory)
+                    val treeCount by backup.treeCount.collectAsStateWithLifecycle()
+                    val promptBackup by backup.promptBackup.collectAsStateWithLifecycle()
+                    val promptDismissed by backup.promptDismissed.collectAsStateWithLifecycle()
+                    val backupMessage by backup.message.collectAsStateWithLifecycle()
+                    var promptHidden by remember { mutableStateOf(false) }
+
+                    val found = promptBackup
+                    if (!promptHidden && !promptDismissed && treeCount == 0 && found != null) {
+                        AlertDialog(
+                            onDismissRequest = {
+                                promptHidden = true
+                                backup.dismissRestorePrompt()
+                            },
+                            title = { Text("Restore your collection?") },
+                            text = {
+                                Text("A backup (${found.displayName}) was found on this device. Restore your trees, photos, and history?")
+                            },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    promptHidden = true
+                                    backup.restore(found.uri)
+                                }) { Text("Restore") }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = {
+                                    promptHidden = true
+                                    backup.dismissRestorePrompt()
+                                }) { Text("Not now") }
+                            },
+                        )
+                    }
+
+                    // App-wide backup result dialog (export/restore outcomes).
+                    backupMessage?.let { msg ->
+                        AlertDialog(
+                            onDismissRequest = backup::clearMessage,
+                            text = { Text(msg) },
+                            confirmButton = {
+                                TextButton(onClick = backup::clearMessage) { Text("OK") }
+                            },
+                        )
+                    }
                 } else {
                     OnboardingScreen(onFinish = onboarding::complete)
                 }

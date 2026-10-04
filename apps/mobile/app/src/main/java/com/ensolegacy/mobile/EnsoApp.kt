@@ -10,6 +10,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.ensolegacy.mobile.data.AppPreferences
+import com.ensolegacy.mobile.data.BackupManager
 import com.ensolegacy.mobile.data.ImageStore
 import com.ensolegacy.mobile.data.SpeciesCatalog
 import com.ensolegacy.mobile.data.local.EnsoDatabase
@@ -44,6 +45,10 @@ class EnsoApp : Application() {
 
     val imageStore: ImageStore by lazy {
         ImageStore(this)
+    }
+
+    val backupManager: BackupManager by lazy {
+        BackupManager(this, database, imageStore)
     }
 
     val bonsaiRepository: BonsaiRepository by lazy {

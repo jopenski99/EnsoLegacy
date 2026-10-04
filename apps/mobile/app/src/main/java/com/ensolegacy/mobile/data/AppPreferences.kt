@@ -17,8 +17,18 @@ class AppPreferences(context: Context) {
         get() = prefs.getBoolean(KEY_ONBOARDING_COMPLETE, false)
         set(value) = prefs.edit().putBoolean(KEY_ONBOARDING_COMPLETE, value).apply()
 
+    /**
+     * True once the user has declined the "restore from backup?" prompt shown
+     * on a fresh install when a device backup is found. Restore stays
+     * available in Settings; this just stops the prompt from nagging.
+     */
+    var backupRestorePromptDismissed: Boolean
+        get() = prefs.getBoolean(KEY_BACKUP_PROMPT_DISMISSED, false)
+        set(value) = prefs.edit().putBoolean(KEY_BACKUP_PROMPT_DISMISSED, value).apply()
+
     private companion object {
         const val PREFS_NAME = "enso_prefs"
         const val KEY_ONBOARDING_COMPLETE = "onboarding_complete"
+        const val KEY_BACKUP_PROMPT_DISMISSED = "backup_restore_prompt_dismissed"
     }
 }
