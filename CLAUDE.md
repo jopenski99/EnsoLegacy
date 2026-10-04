@@ -99,6 +99,7 @@ Ship in phases. Respect the current phase — don't pull future-phase work forwa
 
 ## Mission & Tone
 
+- **Offline-first, accounts are opt-in.** The app is fully useful with no account and no network — local backup/export covers data safety. Going online is the user's choice, tied to a specific need: (A) making a tree's history public (QR pages), (B) handing a bonsai off to another keeper, (C) syncing multiple devices. Never gate core tracking behind sign-up.
 - **Community-first, Davao-first.** The events surface is a curated bulletin board (events, exhibits, workshops, cutting trades, club directory) — *not* a social feed.
 - The product voice is calm, reverent, and patient. **Avoid hype, growth-hacking, dark patterns, and engagement-maximizing mechanics.** Donation prompts trigger at meaningful moments, never naggy.
 
