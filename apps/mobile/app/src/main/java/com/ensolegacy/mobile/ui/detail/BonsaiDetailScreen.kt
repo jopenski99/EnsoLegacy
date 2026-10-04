@@ -120,23 +120,24 @@ fun BonsaiDetailScreen(
     var showEdit by remember { mutableStateOf(false) }
     val bonsai = uiState.bonsai
 
-    // Photo capture state. A "target" says where a captured/picked photo goes;
-    // the source chooser, in-app camera, and gallery picker all route by it.
+    // Photo capture state. A "target" says where a captured photo goes; the
+    // source chooser and in-app camera route by it. Gallery picks are routed
+    // at launch instead: the cover uses the single-pick contract, vault adds
+    // are multi-select (no product cap — PickMultipleVisualMedia() defaults
+    // to the system max).
     var chooserTarget by remember { mutableStateOf<CaptureTarget?>(null) }
     var cameraTarget by remember { mutableStateOf<CaptureTarget?>(null) }
-    var galleryTarget by remember { mutableStateOf<CaptureTarget?>(null) }
     var showAddMilestone by remember { mutableStateOf(false) }
 
-    val galleryLauncher = rememberLauncherForActivityResult(
+    val coverGalleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
-        val target = galleryTarget
-        galleryTarget = null
-        if (uri != null) when (target) {
-            CaptureTarget.COVER -> viewModel.setCoverPhotoFromGallery(uri)
-            CaptureTarget.VAULT -> viewModel.addVaultPhotoFromGallery(uri)
-            null -> Unit
-        }
+        if (uri != null) viewModel.setCoverPhotoFromGallery(uri)
+    }
+    val vaultGalleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(),
+    ) { uris ->
+        if (uris.isNotEmpty()) viewModel.addVaultPhotosFromGallery(uris)
     }
 
     Scaffold(
@@ -240,10 +241,11 @@ fun BonsaiDetailScreen(
             },
             onGallery = {
                 chooserTarget = null
-                galleryTarget = target
-                galleryLauncher.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                )
+                val request = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                when (target) {
+                    CaptureTarget.COVER -> coverGalleryLauncher.launch(request)
+                    CaptureTarget.VAULT -> vaultGalleryLauncher.launch(request)
+                }
             },
             onDismiss = { chooserTarget = null },
         )

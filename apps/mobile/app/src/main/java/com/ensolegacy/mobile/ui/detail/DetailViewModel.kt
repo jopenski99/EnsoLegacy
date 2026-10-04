@@ -142,11 +142,13 @@ class DetailViewModel(
         viewModelScope.launch { milestones.addVaultPhoto(bonsaiId, path, System.currentTimeMillis()) }
     }
 
-    /** Add a gallery photo to the vault (copied into storage first). */
-    fun addVaultPhotoFromGallery(uri: Uri) {
+    /** Add gallery photos to the vault in one go (each copied into storage first). */
+    fun addVaultPhotosFromGallery(uris: List<Uri>) {
         viewModelScope.launch {
-            val path = imageStore.importFromUri(uri) ?: return@launch
-            milestones.addVaultPhoto(bonsaiId, path, System.currentTimeMillis())
+            uris.forEach { uri ->
+                val path = imageStore.importFromUri(uri) ?: return@forEach
+                milestones.addVaultPhoto(bonsaiId, path, System.currentTimeMillis())
+            }
         }
     }
 

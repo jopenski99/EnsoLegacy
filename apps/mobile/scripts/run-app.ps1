@@ -38,7 +38,7 @@ $Apk = Join-Path $ProjRoot 'app\build\outputs\apk\debug\app-debug.apk'
 # --- JDK 17 ------------------------------------------------------------------
 $Jdk = $env:JAVA_HOME
 if (-not ($Jdk -and (Test-Path (Join-Path $Jdk 'bin\java.exe')))) {
-    $Jdk = 'C:\Program Files\Microsoft\jdk-17.0.19.10-hotspot'
+    $Jdk = 'C:\Program Files\Microsoft\jdk-17.0.20.101-hotspot'
 }
 if (-not (Test-Path (Join-Path $Jdk 'bin\java.exe'))) {
     throw "JDK 17 not found. Set JAVA_HOME or install Microsoft.OpenJDK.17."

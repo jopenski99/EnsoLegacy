@@ -56,7 +56,9 @@ import java.time.format.DateTimeFormatter
 
 /**
  * "Add milestone" flow (spec §2.7) — title, optional note, the date it happened,
- * and the up-to-[MAX_MILESTONE_PHOTOS] photo flow. Photos are captured/imported
+ * and the up-to-[MAX_MILESTONE_PHOTOS] photo flow. Gallery picks are
+ * multi-select (capped at the remaining slots); camera captures come in one at
+ * a time. Photos are captured/imported
  * into storage as they're added (so a thumbnail can show immediately); their
  * paths are staged and only linked to a milestone row on Save. Cancelling
  * discards the staged files so nothing is orphaned.
@@ -81,13 +83,29 @@ fun AddMilestoneSheet(
     var showDatePicker by remember { mutableStateOf(false) }
     val atMax = staged.size >= MAX_MILESTONE_PHOTOS
 
-    val galleryLauncher = rememberLauncherForActivityResult(
+    // Gallery import is multi-select; the single-pick contract is kept for the
+    // one-slot-remaining case (PickMultipleVisualMedia requires maxItems > 1).
+    val singleGalleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
         if (uri != null) {
             scope.launch {
                 val path = imageStore.importFromUri(uri)
                 if (path != null) staged = staged + path
+            }
+        }
+    }
+    // maxItems is fixed at the milestone cap; the callback re-caps at the slots
+    // actually remaining, since the fallback picker on older devices can't
+    // enforce maxItems and may return more.
+    val multiGalleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(MAX_MILESTONE_PHOTOS),
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            scope.launch {
+                val paths = uris.take(MAX_MILESTONE_PHOTOS - staged.size)
+                    .mapNotNull { imageStore.importFromUri(it) }
+                staged = staged + paths
             }
         }
     }
@@ -185,9 +203,13 @@ fun AddMilestoneSheet(
                 }
                 OutlinedButton(
                     onClick = {
-                        galleryLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                        )
+                        val request =
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        if (MAX_MILESTONE_PHOTOS - staged.size > 1) {
+                            multiGalleryLauncher.launch(request)
+                        } else {
+                            singleGalleryLauncher.launch(request)
+                        }
                     },
                     enabled = !atMax,
                     modifier = Modifier.weight(1f),
