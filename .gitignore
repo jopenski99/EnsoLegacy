@@ -41,3 +41,8 @@ apps/mobile/.cxx/
 # Supabase
 supabase/.branches/
 supabase/.temp/
+
+# Graphify
+graphify-out/
+**/graphify-out/
+.graphify*
